@@ -6,14 +6,27 @@ const CertificateRequestSchema = new mongoose.Schema({
   certificateType: { type: String, required: true },
   purpose: { type: String, required: true },
   notes: { type: String },
-  documentUrl: { type: String }, // New field for file link
-  documentPublicId: { type: String }, // To manage the file on Cloudinary
+  documentUrl: { type: String }, 
+  documentPublicId: { type: String },
   status: {
     type: String,
-    enum: ['Requested', 'In Process', 'Signed by HOD', 'Principal Approval', 'Ready', 'Collected'],
+    enum: [
+      'Requested',
+      'In Process',
+      'Signed by HOD',
+      'Principal Approval',
+      'Ready',
+      'Collected',
+      'Rejected' 
+    ],
     default: 'Requested'
   },
-  remarks: [{ /* ... */ }],
+  remarks: [{
+    status: String,
+    updatedBy: String,
+    date: { type: Date, default: Date.now },
+    comment: String,
+  }],
 }, { timestamps: true });
 
 module.exports = mongoose.model('CertificateRequest', CertificateRequestSchema);

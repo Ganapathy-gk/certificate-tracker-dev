@@ -161,3 +161,27 @@ tr:hover {
 .update-status-header {
   margin-top: 0;
 }
+
+/* Add to end of AdminDashboard.css */
+.filter-container input[type="date"] {
+    padding: 0.6rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+.export-button {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    padding: 0.7rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+}
+.modal-content textarea {
+    width: 100%;
+    min-height: 80px;
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
