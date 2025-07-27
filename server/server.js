@@ -13,7 +13,7 @@ const app = express();
 
 const allowedOrigins = [
   'http://localhost:5173',
-  'https://certificate-tracker-dev-api.netlify.app' 
+  'https://certificate-tracker-dev-api.netlify.app'
 ];
 
 app.use(cors({
