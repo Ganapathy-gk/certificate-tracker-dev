@@ -2,7 +2,6 @@ const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
-// Helper function to generate a JWT token
 const generateToken = (id, role) => {
   return jwt.sign({ id, role }, process.env.JWT_SECRET, {
     expiresIn: '30d',
@@ -14,7 +13,6 @@ const generateToken = (id, role) => {
  * @route   POST /api/auth/register
  */
 exports.registerUser = async (req, res) => {
-  // ADDED: 'department' is now being read from the request
   const { name, email, password, role, studentId, department } = req.body;
 
   try {
@@ -32,7 +30,7 @@ exports.registerUser = async (req, res) => {
       password: hashedPassword,
       role: role || 'student',
       studentId,
-      department, // ADDED: 'department' is now being saved
+      department, 
     });
 
     if (user) {
