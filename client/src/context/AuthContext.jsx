@@ -7,23 +7,29 @@ export const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true); // Add loading state, default to true
 
-  // This useEffect hook will run once when the app loads
-  // It checks if user data is stored in localStorage
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
+    try {
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+      }
+    } catch (error) {
+      console.error("Failed to parse user from localStorage", error);
+      setUser(null);
+    } finally {
+      // Set loading to false after we've tried to get the user
+      setLoading(false);
     }
   }, []);
 
   const login = async (email, password) => {
     try {
-      // The URL to your backend login endpoint
       const { data } = await axios.post(`${API_BASE_URL}/api/auth/login`, { email, password });
       localStorage.setItem('user', JSON.stringify(data));
       setUser(data);
-      return data; // Return data to redirect based on role
+      return data;
     } catch (error) {
       console.error("Login failed", error.response.data);
       throw error;
@@ -36,7 +42,8 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    // Provide the new 'loading' state to the rest of the app
+    <AuthContext.Provider value={{ user, loading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

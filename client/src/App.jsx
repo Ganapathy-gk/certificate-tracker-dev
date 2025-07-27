@@ -9,15 +9,29 @@ import RegisterPage from './pages/RegisterPage';
 import StudentDashboard from './pages/StudentDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 
-// This component protects routes that require a user to be logged in
+// This component now checks the loading state before protecting a route
 const ProtectedRoute = ({ children }) => {
-  const { user } = useContext(AuthContext);
+  const { user, loading } = useContext(AuthContext);
+
+  // If the app is still checking for a user, show a loading message
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  // If loading is finished, check if there is a user
   return user ? children : <Navigate to="/login" />;
 };
 
-// This component protects routes that require an admin role
+// This component also checks the loading state for admin routes
 const AdminRoute = ({ children }) => {
-  const { user } = useContext(AuthContext);
+  const { user, loading } = useContext(AuthContext);
+
+  // If the app is still checking, show a loading message
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  // If loading is finished, check for an admin user
   return user && user.role === 'admin' ? children : <Navigate to="/login" />;
 };
 
