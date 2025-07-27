@@ -1,19 +1,23 @@
-import React, { useContext, useState, useEffect } from 'react';
+// src/pages/StudentDashboard.jsx
+import React, { useContext, useState, useEffect, useRef } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
 import Clock from '../components/Clock';
 import './StudentDashboard.css';
 
+// Define the API base URL at the top
+const API_BASE_URL = import.meta.env.VITE_BACKEND_API_URL;
+
 const StudentDashboard = () => {
-  const API_BASE_URL = import.meta.env.VITE_BACKEND_API_URL;
   const { user, logout } = useContext(AuthContext);
   const [requests, setRequests] = useState([]);
+  const fileInputRef = useRef(null); // Ref to control the file input
 
-  // State for the form fields
+  // State for the new form fields
   const [certificateType, setCertificateType] = useState('Bonafide');
   const [purpose, setPurpose] = useState('');
   const [notes, setNotes] = useState('');
-  const [document, setDocument] = useState(null); // New state for the file
+  const [document, setDocument] = useState(null);
 
   const statusSteps = ['Requested', 'In Process', 'Signed by HOD', 'Principal Approval', 'Ready'];
   
@@ -26,7 +30,8 @@ const StudentDashboard = () => {
   const fetchRequests = async () => {
     try {
       const config = { headers: { Authorization: `Bearer ${user.token}` } };
-      const { data } = await axios.get(`${API_BASE_URL}/api/certificates/my-requests`, config)
+      // FIX: Use the full API_BASE_URL for the GET request
+      const { data } = await axios.get(`${API_BASE_URL}/api/certificates/my-requests`, config);
       setRequests(data);
     } catch (error) {
       console.error('Failed to fetch requests', error);
@@ -40,7 +45,6 @@ const StudentDashboard = () => {
   const handleRequestSubmit = async (e) => {
     e.preventDefault();
     
-    // Use FormData to send file and text data together
     const formData = new FormData();
     formData.append('certificateType', certificateType);
     formData.append('purpose', purpose);
@@ -52,20 +56,24 @@ const StudentDashboard = () => {
     try {
       const config = {
         headers: {
-          'Content-Type': 'multipart/form-data', // Important for file uploads
+          'Content-Type': 'multipart/form-data',
           Authorization: `Bearer ${user.token}`,
         },
       };
+      // FIX: Use the full API_BASE_URL for the POST request
       await axios.post(`${API_BASE_URL}/api/certificates/request`, formData, config);
       
       alert('Request submitted successfully!');
-      fetchRequests(); // Re-fetch requests
+      fetchRequests(); // This will now succeed
       // Reset form
       setPurpose('');
       setNotes('');
       setDocument(null);
-      document.getElementById('document').value = null; // Clear file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = null; // FIX: Correctly reset file input
+      }
     } catch (error) {
+      // This will no longer be triggered incorrectly
       alert('Failed to submit request.');
       console.error(error);
     }
@@ -102,7 +110,7 @@ const StudentDashboard = () => {
             </div>
             <div className="form-group">
                 <label htmlFor="document">Supporting Document (PDF, PNG, JPG - max 1MB)</label>
-                <input type="file" id="document" onChange={(e) => setDocument(e.target.files[0])} />
+                <input type="file" id="document" ref={fileInputRef} onChange={(e) => setDocument(e.target.files[0])} />
             </div>
             <div className="form-group">
                 <label htmlFor="notes">Additional Notes (Optional)</label>
