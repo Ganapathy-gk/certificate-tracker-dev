@@ -5,6 +5,7 @@ import axios from 'axios';
 import './RegisterPage.css'; // We will create this file next
 
 const RegisterPage = () => {
+  const API_BASE_URL = import.meta.env.VITE_BACKEND_API_URL;
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [studentId, setStudentId] = useState('');
@@ -16,7 +17,7 @@ const RegisterPage = () => {
     try {
       // We will add the registration logic to AuthContext later
       // For now, we call the API directly
-      await axios.post('http://localhost:5001/api/auth/register', {
+      await axios.post(`${API_BASE_URL}/api/auth/register`, {
         name,
         email,
         studentId,

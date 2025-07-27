@@ -5,6 +5,7 @@ import Clock from '../components/Clock';
 import './StudentDashboard.css';
 
 const StudentDashboard = () => {
+  const API_BASE_URL = import.meta.env.VITE_BACKEND_API_URL;
   const { user, logout } = useContext(AuthContext);
   const [requests, setRequests] = useState([]);
 
@@ -25,7 +26,7 @@ const StudentDashboard = () => {
   const fetchRequests = async () => {
     try {
       const config = { headers: { Authorization: `Bearer ${user.token}` } };
-      const { data } = await axios.get('http://localhost:5001/api/certificates/my-requests', config);
+      const { data } = await axios.get(`${API_BASE_URL}/api/certificates/my-requests`, config)
       setRequests(data);
     } catch (error) {
       console.error('Failed to fetch requests', error);
@@ -55,7 +56,7 @@ const StudentDashboard = () => {
           Authorization: `Bearer ${user.token}`,
         },
       };
-      await axios.post('http://localhost:5001/api/certificates/request', formData, config);
+      await axios.post(`${API_BASE_URL}/api/certificates/request`, formData, config);
       
       alert('Request submitted successfully!');
       fetchRequests(); // Re-fetch requests

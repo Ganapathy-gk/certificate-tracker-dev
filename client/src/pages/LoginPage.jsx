@@ -5,6 +5,7 @@ import { AuthContext } from '../context/AuthContext';
 import './LoginPage.css';
 
 const LoginPage = () => {
+  const API_BASE_URL = import.meta.env.VITE_BACKEND_API_URL;
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const { login } = useContext(AuthContext);

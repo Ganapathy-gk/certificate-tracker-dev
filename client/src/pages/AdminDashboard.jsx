@@ -5,6 +5,7 @@ import Clock from '../components/Clock';
 import './AdminDashboard.css';
 
 const AdminDashboard = () => {
+  const API_BASE_URL = import.meta.env.VITE_BACKEND_API_URL;
   const { user, logout } = useContext(AuthContext);
   const [requests, setRequests] = useState([]);
   const [selectedRequest, setSelectedRequest] = useState(null);
@@ -22,7 +23,7 @@ const AdminDashboard = () => {
           Authorization: `Bearer ${user.token}`,
         },
       };
-      const { data } = await axios.get('http://localhost:5001/api/certificates/all', config);
+      const { data } = await axios.get(`${API_BASE_URL}/api/certificates/all`, config);
       setRequests(data);
     } catch (error) {
       console.error('Failed to fetch requests', error);
@@ -51,7 +52,7 @@ const AdminDashboard = () => {
                 Authorization: `Bearer ${user.token}`,
             },
         };
-        await axios.put(`http://localhost:5001/api/certificates/${selectedRequest._id}/update-status`, { status: newStatus }, config);
+        await axios.put(`${API_BASE_URL}/api/certificates/${selectedRequest._id}/update-status`, { status: newStatus }, config);
         alert('Status updated successfully!');
         setSelectedRequest(null);
         fetchAllRequests(); // Refresh the list
