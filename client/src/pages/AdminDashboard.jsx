@@ -151,14 +151,22 @@ const AdminDashboard = () => {
         </div>
       </main>
 
-      {/* Update Status Modal */}
+      {/* ===== START OF UPDATED MODAL CODE ===== */}
       {selectedRequest && (
          <div className="modal-overlay">
             <div className="modal-content">
-                <h3>Update Request Status</h3>
+                <h3>Request Details</h3>
                 <p><strong>Student:</strong> {selectedRequest.student?.name}</p>
                 <p><strong>Certificate:</strong> {selectedRequest.certificateType}</p>
+                
+                {/* ADDED: Purpose and Notes */}
+                <p className="request-details"><strong>Purpose:</strong> {selectedRequest.purpose}</p>
+                {selectedRequest.notes && <p className="request-details"><strong>Notes:</strong> {selectedRequest.notes}</p>}
+                
+                <hr className="divider" />
+                
                 <form onSubmit={handleStatusUpdate}>
+                    <h4 className="update-status-header">Update Status</h4>
                     <div className="form-group">
                         <label htmlFor="status-select">New Status</label>
                         <select id="status-select" value={newStatus} onChange={(e) => setNewStatus(e.target.value)}>
@@ -178,6 +186,7 @@ const AdminDashboard = () => {
             </div>
          </div>
       )}
+      {/* ===== END OF UPDATED MODAL CODE ===== */}
     </div>
   );
 };

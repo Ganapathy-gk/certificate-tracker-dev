@@ -140,3 +140,24 @@ tr:hover {
     text-decoration: none;
     display: inline-block;
 }
+
+/* Add this to the end of AdminDashboard.css */
+
+.request-details {
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+  padding: 10px;
+  border-radius: 4px;
+  margin: 10px 0;
+  word-wrap: break-word;
+}
+
+.divider {
+  border: none;
+  border-top: 1px solid #e9ecef;
+  margin: 20px 0;
+}
+
+.update-status-header {
+  margin-top: 0;
+}
