@@ -14,7 +14,8 @@ const generateToken = (id, role) => {
  * @route   POST /api/auth/register
  */
 exports.registerUser = async (req, res) => {
-  const { name, email, password, role, studentId } = req.body;
+  // UPDATED: 'department' is now being read from the request
+  const { name, email, password, role, studentId, department } = req.body;
 
   try {
     // Check if user already exists
@@ -32,8 +33,9 @@ exports.registerUser = async (req, res) => {
       name,
       email,
       password: hashedPassword,
-      role: role || 'student', // Default to 'student' if no role is provided
-      studentId, // This now saves the studentId for all roles
+      role: role || 'student',
+      studentId,
+      department, // UPDATED: 'department' is now being saved
     });
 
     // If user creation is successful, respond with user data and token

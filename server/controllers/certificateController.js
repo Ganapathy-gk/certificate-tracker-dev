@@ -69,7 +69,8 @@ exports.getStudentRequests = async (req, res) => {
 // Get all requests (for Admin)
 exports.getAllRequests = async (req, res) => {
   try {
-    const requests = await CertificateRequest.find({}).populate('student', 'name email studentId').sort({ createdAt: -1 });
+    // UPDATED: Added 'department' to the populate method
+    const requests = await CertificateRequest.find({}).populate('student', 'name email studentId department').sort({ createdAt: -1 });
     res.json(requests);
   } catch (error) {
     res.status(500).json({ message: `Server Error: ${error.message}` });
