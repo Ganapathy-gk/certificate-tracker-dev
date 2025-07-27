@@ -3,7 +3,6 @@ const dotenv = require('dotenv');
 const cors = require('cors');
 const connectDB = require('./config/db');
 
-// Correct imports for routes
 const authRoutes = require('./routes/authRoutes');
 const certificateRoutes = require('./routes/certificateRoutes');
 
@@ -14,7 +13,7 @@ const app = express();
 
 const allowedOrigins = [
   'http://localhost:5173',
-  'https://YOUR_NETLIFY_SITE_NAME.netlify.app' // Remember to replace this later
+  'https://certificate-tracker-dev-api.netlify.app' 
 ];
 
 app.use(cors({
@@ -30,7 +29,6 @@ app.use(cors({
 
 app.use(express.json());
 
-// Correctly mounted routes
 app.use('/api/auth', authRoutes);
 app.use('/api/certificates', certificateRoutes);
 
@@ -38,7 +36,7 @@ app.get('/', (req, res) => {
   res.send('Certificate Tracker API is running!');
 });
 
-const PORT = process.env.PORT || 10000; // Render uses port 10000
+const PORT = process.env.PORT || 10000; 
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
