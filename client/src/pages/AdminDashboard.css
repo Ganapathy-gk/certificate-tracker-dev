@@ -1,16 +1,69 @@
+/* =================================
+   Admin Header
+   ================================= */
 .admin-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 1rem 2rem;
-  background-color: #343a40; /* Dark background */
-  color: white; /* White text */
+  background-color: #343a40;
+  color: white;
 }
 
 .admin-header h2 {
     color: white;
 }
 
+/* =================================
+   Filter Bar
+   ================================= */
+.filter-container {
+    background: white;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-wrap: wrap; /* Allows filters to wrap on smaller screens */
+    gap: 1rem;
+    align-items: center;
+}
+
+.filter-container .search-input {
+    flex-grow: 1;
+    padding: 0.7rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    color: #333;
+}
+
+.filter-container .search-input::placeholder {
+    color: #888;
+}
+
+.filter-container select,
+.filter-container input[type="date"] {
+    padding: 0.7rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: white;
+    color: #333;
+}
+
+.export-button {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    padding: 0.7rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+/* =================================
+   Requests Table
+   ================================= */
 .requests-table-container {
   width: 100%;
   background: white;
@@ -29,6 +82,7 @@ th, td {
   padding: 12px 15px;
   text-align: left;
   border-bottom: 1px solid #ddd;
+  color: #333; /* IMPORTANT: Fix for visible table text */
 }
 
 th {
@@ -49,6 +103,15 @@ tr:hover {
   cursor: pointer;
 }
 
+.download-button {
+    background-color: #17a2b8;
+    text-decoration: none;
+    display: inline-block;
+}
+
+/* =================================
+   Status Badges
+   ================================= */
 .status-badge {
     padding: 3px 8px;
     border-radius: 12px;
@@ -56,18 +119,16 @@ tr:hover {
     font-weight: 600;
     color: white;
 }
-
 .status-requested { background-color: #6c757d; }
 .status-in-process { background-color: #ffc107; color: #333}
 .status-ready { background-color: #28a745; }
 .status-collected { background-color: #17a2b8; }
+.status-rejected { background-color: #dc3545; } /* ADDED: Rejected status color */
 .status-signed-by-hod, .status-principal-approval { background-color: #fd7e14; }
-/* Fix for filter controls text color */
-.filter-container .search-input,
-.filter-container select {
-  color: #333;
-}
 
+/* =================================
+   Modal Styles
+   ================================= */
 .modal-overlay {
     position: fixed;
     top: 0;
@@ -78,6 +139,7 @@ tr:hover {
     display: flex;
     justify-content: center;
     align-items: center;
+    z-index: 1000;
 }
 
 .modal-content {
@@ -88,7 +150,7 @@ tr:hover {
     max-width: 500px;
 }
 
-.modal-content h3 {
+.modal-content h3, .modal-content h4 {
     margin-top: 0;
 }
 
@@ -108,41 +170,6 @@ tr:hover {
     cursor: pointer;
 }
 
-/* Add these styles to AdminDashboard.css */
-.filter-container {
-    background: white;
-    padding: 1rem 1.5rem;
-    border-radius: 8px;
-    margin-bottom: 2rem;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    display: flex;
-    gap: 1rem;
-    align-items: center;
-}
-
-.filter-container .search-input {
-    flex-grow: 1;
-    padding: 0.7rem;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    font-size: 0.9rem;
-}
-
-.filter-container select {
-    padding: 0.7rem;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    background: white;
-}
-
-.download-button {
-    background-color: #17a2b8; /* A different color */
-    text-decoration: none;
-    display: inline-block;
-}
-
-/* Add this to the end of AdminDashboard.css */
-
 .request-details {
   background-color: #f8f9fa;
   border: 1px solid #e9ecef;
@@ -158,25 +185,6 @@ tr:hover {
   margin: 20px 0;
 }
 
-.update-status-header {
-  margin-top: 0;
-}
-
-/* Add to end of AdminDashboard.css */
-.filter-container input[type="date"] {
-    padding: 0.6rem;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-}
-.export-button {
-    background-color: #28a745;
-    color: white;
-    border: none;
-    padding: 0.7rem 1rem;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: 600;
-}
 .modal-content textarea {
     width: 100%;
     min-height: 80px;

@@ -35,13 +35,16 @@
   color: #555;
 }
 
-.auth-form input {
+/* UPDATED: This rule now applies to both inputs and select dropdowns */
+.auth-form input,
+.auth-form select {
   width: 100%;
   padding: 0.8rem;
   border: 1px solid #ccc;
   border-radius: 4px;
   font-size: 1rem;
   box-sizing: border-box;
+  font-family: inherit; /* Ensures the select dropdown uses the same font */
 }
 
 .auth-button {

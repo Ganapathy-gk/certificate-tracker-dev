@@ -1,7 +1,5 @@
 .dashboard-page {
   font-family: sans-serif;
-  background-color: #f8f9fa;
-  min-height: 100vh;
 }
 
 .dashboard-header {
@@ -18,11 +16,6 @@
   margin: 0;
 }
 
-.dashboard-header span {
-  margin-right: 1rem;
-  font-weight: 500;
-}
-
 .logout-button {
   border: none;
   background-color: #dc3545;
@@ -30,12 +23,6 @@
   padding: 0.5rem 1rem;
   border-radius: 4px;
   cursor: pointer;
-}
-
-.dashboard-main {
-  display: flex;
-  padding: 2rem;
-  gap: 2rem;
 }
 
 .form-container,
@@ -47,7 +34,7 @@
 }
 
 .form-container {
-  flex: 1;
+  flex: 1.5;
 }
 
 .requests-container {
@@ -72,12 +59,18 @@ h3 {
 }
 
 .form-container select,
-.form-container input {
+.form-container input,
+.form-container textarea {
   width: 100%;
   padding: 0.8rem;
   border: 1px solid #ccc;
   border-radius: 4px;
   box-sizing: border-box;
+}
+
+.form-container textarea {
+    min-height: 80px;
+    resize: vertical;
 }
 
 .submit-button {
@@ -104,22 +97,70 @@ h3 {
   padding: 1rem;
 }
 
-.request-card h4 {
-  margin: 0 0 0.5rem 0;
+.student-card {
+  padding: 1rem 1.5rem;
+  position: relative;
 }
 
-.request-card p {
-  margin: 0.2rem 0;
-  font-size: 0.9rem;
-  color: #666;
+.student-card .card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
 }
 
-.request-card .status span {
-  font-weight: bold;
-  color: #ffc107;
+.student-card h4 {
+  margin: 0;
 }
 
-/* Add to end of StudentDashboard.css */
+.status-pill {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: white;
+}
+.status-requested { background-color: #6c757d; }
+.status-in-process { background-color: #ffc107; color: #333}
+.status-ready { background-color: #28a745; }
+.status-collected { background-color: #17a2b8; }
+.status-rejected { background-color: #dc3545; }
+.status-signed-by-hod, .status-principal-approval { background-color: #fd7e14; }
+
+
+.purpose-text {
+    font-size: 0.9rem;
+    color: #555;
+    margin-bottom: 1rem;
+}
+
+.progress-container {
+  background-color: #e9ecef;
+  border-radius: 0.25rem;
+  height: 8px;
+  width: 100%;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.progress-bar {
+  background-color: #007bff;
+  height: 100%;
+  border-radius: 0.25rem;
+  transition: width 0.4s ease;
+}
+
+.progress-bar.rejected {
+  background-color: #dc3545; /* Red for rejected */
+}
+
+.applied-date {
+    font-size: 0.8rem;
+    color: #888;
+    text-align: right;
+    margin: 0;
+}
+
 .rejection-reason {
     font-size: 0.9rem;
     color: #dc3545; /* Red color */

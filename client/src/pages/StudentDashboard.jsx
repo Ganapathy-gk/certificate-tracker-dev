@@ -1,19 +1,16 @@
-// src/pages/StudentDashboard.jsx
 import React, { useContext, useState, useEffect, useRef } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
 import Clock from '../components/Clock';
 import './StudentDashboard.css';
 
-// Define the API base URL at the top
 const API_BASE_URL = import.meta.env.VITE_BACKEND_API_URL;
 
 const StudentDashboard = () => {
   const { user, logout } = useContext(AuthContext);
   const [requests, setRequests] = useState([]);
-  const fileInputRef = useRef(null); // Ref to control the file input
+  const fileInputRef = useRef(null);
 
-  // State for the new form fields
   const [certificateType, setCertificateType] = useState('Bonafide');
   const [purpose, setPurpose] = useState('');
   const [notes, setNotes] = useState('');
@@ -21,16 +18,18 @@ const StudentDashboard = () => {
 
   const statusSteps = ['Requested', 'In Process', 'Signed by HOD', 'Principal Approval', 'Ready'];
   
+  // UPDATED: Progress function handles 'Rejected' status
   const getProgress = (currentStatus) => {
-    const currentIndex = statusSteps.indexOf(currentStatus);
     if (currentStatus === 'Collected') return 100;
+    if (currentStatus === 'Rejected') return 100; // Show a full red bar for rejected
+    const currentIndex = statusSteps.indexOf(currentStatus);
     return ((currentIndex + 1) / statusSteps.length) * 100;
   };
 
   const fetchRequests = async () => {
+    if (!user) return; // Guard clause
     try {
       const config = { headers: { Authorization: `Bearer ${user.token}` } };
-      // FIX: Use the full API_BASE_URL for the GET request
       const { data } = await axios.get(`${API_BASE_URL}/api/certificates/my-requests`, config);
       setRequests(data);
     } catch (error) {
@@ -39,12 +38,11 @@ const StudentDashboard = () => {
   };
 
   useEffect(() => {
-    if (user) fetchRequests();
+    fetchRequests();
   }, [user]);
 
   const handleRequestSubmit = async (e) => {
     e.preventDefault();
-    
     const formData = new FormData();
     formData.append('certificateType', certificateType);
     formData.append('purpose', purpose);
@@ -52,28 +50,20 @@ const StudentDashboard = () => {
     if (document) {
       formData.append('document', document);
     }
-
     try {
       const config = {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          Authorization: `Bearer ${user.token}`,
-        },
+        headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${user.token}` },
       };
-      // FIX: Use the full API_BASE_URL for the POST request
       await axios.post(`${API_BASE_URL}/api/certificates/request`, formData, config);
-      
       alert('Request submitted successfully!');
-      fetchRequests(); // This will now succeed
-      // Reset form
+      fetchRequests();
       setPurpose('');
       setNotes('');
       setDocument(null);
       if (fileInputRef.current) {
-        fileInputRef.current.value = null; // FIX: Correctly reset file input
+        fileInputRef.current.value = null;
       }
     } catch (error) {
-      // This will no longer be triggered incorrectly
       alert('Failed to submit request.');
       console.error(error);
     }
@@ -131,8 +121,20 @@ const StudentDashboard = () => {
                     <span className={`status-pill status-${req.status.toLowerCase().replace(/\s+/g, '-')}`}>{req.status}</span>
                   </div>
                   <p className="purpose-text"><strong>Purpose:</strong> {req.purpose}</p>
+                  
+                  {/* ADDED: This block shows the rejection reason */}
+                  {req.status === 'Rejected' && req.remarks.length > 1 && (
+                    <p className="rejection-reason">
+                      <strong>Reason:</strong> {req.remarks[req.remarks.length - 1].comment}
+                    </p>
+                  )}
+
                   <div className="progress-container">
-                    <div className="progress-bar" style={{ width: `${getProgress(req.status)}%` }}></div>
+                    {/* UPDATED: Progress bar is now red for rejected status */}
+                    <div 
+                      className={`progress-bar ${req.status === 'Rejected' ? 'rejected' : ''}`} 
+                      style={{ width: `${getProgress(req.status)}%` }}
+                    ></div>
                   </div>
                   <p className="applied-date">Applied on: {new Date(req.createdAt).toLocaleDateString()}</p>
                 </div>

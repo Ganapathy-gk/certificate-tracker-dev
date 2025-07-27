@@ -12,16 +12,17 @@ const AdminDashboard = () => {
   const [requests, setRequests] = useState([]);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [newStatus, setNewStatus] = useState('');
-  const [rejectionComment, setRejectionComment] = useState(''); // ADDED: For rejection reason
+  const [rejectionComment, setRejectionComment] = useState('');
 
   // State variables for filtering
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('All');
   const [filterType, setFilterType] = useState('All');
-  const [startDate, setStartDate] = useState(''); // ADDED: For date filter
-  const [endDate, setEndDate] = useState(''); // ADDED: For date filter
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   const fetchAllRequests = async () => {
+    if (!user) return;
     try {
       const config = { headers: { Authorization: `Bearer ${user.token}` } };
       const { data } = await axios.get(`${API_BASE_URL}/api/certificates/all`, config);
@@ -32,15 +33,13 @@ const AdminDashboard = () => {
   };
 
   useEffect(() => {
-    if (user) {
-      fetchAllRequests();
-    }
+    fetchAllRequests();
   }, [user]);
 
   const handleUpdateClick = (request) => {
     setSelectedRequest(request);
     setNewStatus(request.status);
-    setRejectionComment(''); // Reset comment on modal open
+    setRejectionComment('');
   };
 
   const handleStatusUpdate = async (e) => {
@@ -51,7 +50,6 @@ const AdminDashboard = () => {
         const config = {
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${user.token}` },
         };
-        // UPDATED: Send rejection comment if status is 'Rejected'
         const comment = newStatus === 'Rejected' ? rejectionComment : `Status updated to ${newStatus}`;
         await axios.put(`${API_BASE_URL}/api/certificates/${selectedRequest._id}/update-status`, { status: newStatus, comment: comment }, config);
         alert('Status updated successfully!');
@@ -63,7 +61,6 @@ const AdminDashboard = () => {
     }
   };
 
-  // UPDATED: Filtering logic now includes date range
   const filteredRequests = requests.filter(req => {
     const studentName = req.student?.name?.toLowerCase() || '';
     const studentId = req.student?.studentId?.toLowerCase() || '';
@@ -73,7 +70,6 @@ const AdminDashboard = () => {
     const matchesStatus = filterStatus === 'All' || req.status === filterStatus;
     const matchesType = filterType === 'All' || req.certificateType === filterType;
 
-    // ADDED: Date filtering logic
     const requestDate = new Date(req.createdAt);
     const start = startDate ? new Date(startDate) : null;
     const end = endDate ? new Date(endDate) : null;
@@ -84,7 +80,6 @@ const AdminDashboard = () => {
     return matchesSearch && matchesStatus && matchesType && matchesDate;
   });
 
-  // ADDED: Function to handle PDF export
   const exportToPDF = () => {
     const doc = new jsPDF();
     doc.text("Certificate Requests Report", 14, 16);
@@ -132,7 +127,7 @@ const AdminDashboard = () => {
                 <option value="In Process">In Process</option>
                 <option value="Ready">Ready</option>
                 <option value="Collected">Collected</option>
-                <option value="Rejected">Rejected</option> {/* ADDED */}
+                <option value="Rejected">Rejected</option>
             </select>
             <select value={filterType} onChange={(e) => setFilterType(e.target.value)}>
                 <option value="All">All Types</option>
@@ -140,7 +135,6 @@ const AdminDashboard = () => {
                 <option value="Transfer Certificate">Transfer Certificate</option>
                 <option value="Marksheet Copy">Marksheet Copy</option>
             </select>
-            {/* ADDED: Date inputs and Export button */}
             <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
             <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
             <button className="export-button" onClick={exportToPDF}>Export PDF</button>
@@ -153,7 +147,7 @@ const AdminDashboard = () => {
                 <tr>
                   <th>Student Name</th>
                   <th>Student ID</th>
-                  <th>Department</th> {/* ADDED */}
+                  <th>Department</th>
                   <th>Certificate Type</th>
                   <th>Document</th>
                   <th>Applied Date</th>
@@ -166,7 +160,7 @@ const AdminDashboard = () => {
                   <tr key={req._id}>
                     <td>{req.student?.name || 'N/A'}</td>
                     <td>{req.student?.studentId || 'N/A'}</td>
-                    <td>{req.student?.department || 'N/A'}</td> {/* ADDED */}
+                    <td>{req.student?.department || 'N/A'}</td>
                     <td>
                         {req.documentUrl ? (
                             <a href={req.documentUrl} target="_blank" rel="noopener noreferrer" className="action-button download-button">View</a>
@@ -185,7 +179,6 @@ const AdminDashboard = () => {
         </div>
       </main>
 
-      {/* MODAL: Updated to handle rejection comment */}
       {selectedRequest && (
          <div className="modal-overlay">
             <div className="modal-content">
@@ -206,10 +199,9 @@ const AdminDashboard = () => {
                             <option value="Principal Approval">Principal Approval</option>
                             <option value="Ready">Ready</option>
                             <option value="Collected">Collected</option>
-                            <option value="Rejected">Rejected</option> {/* ADDED */}
+                            <option value="Rejected">Rejected</option>
                         </select>
                     </div>
-                    {/* ADDED: Conditional rejection comment box */}
                     {newStatus === 'Rejected' && (
                         <div className="form-group">
                             <label htmlFor="rejection-comment">Rejection Reason (Required)</label>
@@ -234,4 +226,4 @@ const AdminDashboard = () => {
   );
 };
 
-export default AdminDashboard;
+export default AdminDashboard; // Corrected typo here
