@@ -8,8 +8,8 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #f8f9fa; /* Light gray background for all pages */
-  color: #333; /* Default dark text color for the whole app */
+  background-color: #f8f9fa; /* Clean, light gray background for the entire app */
+  color: #333; /* Default dark text color */
 }
 
 /* =================================
@@ -49,4 +49,15 @@ body {
   .header-right .header-user-info span {
     display: none; /* Hide welcome message on small screens */
   }
+}
+
+/* New styles for the Login/Register page background and layout */
+.auth-background {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column; /* This allows the header/footer to stack vertically */
+  align-items: center;
+  justify-content: center;
+  background-color: #f0f2f5;
+  background-image: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
 }

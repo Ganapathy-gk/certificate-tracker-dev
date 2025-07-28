@@ -3,7 +3,7 @@ import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
 import Clock from '../components/Clock';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import './AdminDashboard.css';
 
 const AdminDashboard = () => {
@@ -14,7 +14,6 @@ const AdminDashboard = () => {
   const [newStatus, setNewStatus] = useState('');
   const [rejectionComment, setRejectionComment] = useState('');
 
-  // State variables for filtering
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('All');
   const [filterType, setFilterType] = useState('All');
@@ -45,7 +44,6 @@ const AdminDashboard = () => {
   const handleStatusUpdate = async (e) => {
     e.preventDefault();
     if (!selectedRequest) return;
-
     try {
         const config = {
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${user.token}` },
@@ -65,30 +63,27 @@ const AdminDashboard = () => {
     const studentName = req.student?.name?.toLowerCase() || '';
     const studentId = req.student?.studentId?.toLowerCase() || '';
     const search = searchTerm.toLowerCase();
-
     const matchesSearch = studentName.includes(search) || studentId.includes(search);
     const matchesStatus = filterStatus === 'All' || req.status === filterStatus;
     const matchesType = filterType === 'All' || req.certificateType === filterType;
-
     const requestDate = new Date(req.createdAt);
     const start = startDate ? new Date(startDate) : null;
     const end = endDate ? new Date(endDate) : null;
     if(start) start.setHours(0,0,0,0);
     if(end) end.setHours(23,59,59,999);
     const matchesDate = (!start || requestDate >= start) && (!end || requestDate <= end);
-
     return matchesSearch && matchesStatus && matchesType && matchesDate;
   });
 
   const exportToPDF = () => {
     const doc = new jsPDF();
     doc.text("Certificate Requests Report", 14, 16);
-    doc.autoTable({
+    autoTable(doc, {
       head: [['Student Name', 'Student ID', 'Department', 'Certificate Type', 'Status', 'Applied Date']],
       body: filteredRequests.map(req => [
-        req.student?.name,
-        req.student?.studentId,
-        req.student?.department,
+        req.student?.name || 'N/A',
+        req.student?.studentId || 'N/A',
+        req.student?.department || 'N/A',
         req.certificateType,
         req.status,
         new Date(req.createdAt).toLocaleDateString()
@@ -110,7 +105,6 @@ const AdminDashboard = () => {
           </div>
         </div>
       </header>
-
       <main className="dashboard-main">
         <div className="admin-main-content" style={{width: '100%'}}>
           <div className="filter-container">
@@ -121,7 +115,7 @@ const AdminDashboard = () => {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
             />
-            <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
+            <select value={filterStatus} onChange={(e) => setFilterStatus(e.taget.value)}>
                 <option value="All">All Statuses</option>
                 <option value="Requested">Requested</option>
                 <option value="In Process">In Process</option>
@@ -139,7 +133,6 @@ const AdminDashboard = () => {
             <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
             <button className="export-button" onClick={exportToPDF}>Export PDF</button>
           </div>
-
           <div className="requests-table-container">
             <h3>All Certificate Requests</h3>
             <table>
@@ -162,9 +155,7 @@ const AdminDashboard = () => {
                     <td>{req.student?.studentId || 'N/A'}</td>
                     <td>{req.student?.department || 'N/A'}</td>
                     <td>
-                        {req.documentUrl ? (
-                            <a href={req.documentUrl} target="_blank" rel="noopener noreferrer" className="action-button download-button">View</a>
-                        ) : ('None')}
+                        {req.documentUrl ? (<a href={req.documentUrl} target="_blank" rel="noopener noreferrer" className="action-button download-button">View</a>) : ('None')}
                     </td>
                     <td>{new Date(req.createdAt).toLocaleDateString()}</td>
                     <td><span className={`status-badge status-${req.status.toLowerCase().replace(/\s+/g, '-')}`}>{req.status}</span></td>
@@ -178,7 +169,6 @@ const AdminDashboard = () => {
           </div>
         </div>
       </main>
-
       {selectedRequest && (
          <div className="modal-overlay">
             <div className="modal-content">
@@ -226,4 +216,4 @@ const AdminDashboard = () => {
   );
 };
 
-export default AdminDashboard; // Corrected typo here
+export default AdminDashboard;
