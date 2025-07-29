@@ -3,7 +3,7 @@ const cloudinary = require('cloudinary').v2;
 const streamifier = require('streamifier');
 const path = require('path'); // Import the path module
 
-// Configure Cloudinary
+// Configure Cloudinary with credentials from your .env file
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
     api_key: process.env.CLOUDINARY_API_KEY,
@@ -18,8 +18,9 @@ exports.createRequest = async (req, res) => {
     let documentUrl = '';
     let documentPublicId = '';
 
+    // If a file is part of the request, upload it to Cloudinary
     if (req.file) {
-      // Create a unique filename for the upload
+      // Create a unique filename for the upload to prevent issues
       const uniqueFilename = `${req.user.studentId}_${Date.now()}${path.extname(req.file.originalname)}`;
 
       const streamUpload = (req) => {
@@ -59,12 +60,10 @@ exports.createRequest = async (req, res) => {
     const savedRequest = await newRequest.save();
     res.status(201).json(savedRequest);
   } catch (error) {
-    console.error("Upload Error:", error); // Added for better debugging
+    console.error("Upload Error:", error);
     res.status(500).json({ message: `Server Error: ${error.message}` });
   }
 };
-
-// --- The rest of the functions in this file remain the same ---
 
 // Get all requests for the logged-in student
 exports.getStudentRequests = async (req, res) => {
