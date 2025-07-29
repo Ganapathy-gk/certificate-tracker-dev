@@ -1,9 +1,8 @@
 const CertificateRequest = require('../models/CertificateRequest');
 const cloudinary = require('cloudinary').v2;
 const streamifier = require('streamifier');
-const path = require('path'); // Import the path module
 
-// Configure Cloudinary with credentials from your .env file
+// Configure Cloudinary
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
     api_key: process.env.CLOUDINARY_API_KEY,
@@ -18,25 +17,27 @@ exports.createRequest = async (req, res) => {
     let documentUrl = '';
     let documentPublicId = '';
 
-    // If a file is part of the request, upload it to Cloudinary
     if (req.file) {
-      // Create a unique filename for the upload to prevent issues
-      const uniqueFilename = `${req.user.studentId}_${Date.now()}${path.extname(req.file.originalname)}`;
+      // Create a unique filename without the extension
+      const uniqueFilename = `${req.user.studentId}_${Date.now()}`;
+
+      // Determine the resource type based on the file's mimetype
+      let resource_type = 'raw';
+      if (req.file.mimetype.startsWith('image/')) {
+        resource_type = 'image';
+      }
 
       const streamUpload = (req) => {
         return new Promise((resolve, reject) => {
           const stream = cloudinary.uploader.upload_stream(
             { 
               folder: 'certificates',
-              public_id: uniqueFilename, // Use our unique filename
-              resource_type: 'auto'
+              public_id: uniqueFilename,
+              resource_type: resource_type, // Use the detected resource type
             },
             (error, result) => {
-              if (result) {
-                resolve(result);
-              } else {
-                reject(error);
-              }
+              if (result) { resolve(result); } 
+              else { reject(error); }
             }
           );
           streamifier.createReadStream(req.file.buffer).pipe(stream);
@@ -60,12 +61,12 @@ exports.createRequest = async (req, res) => {
     const savedRequest = await newRequest.save();
     res.status(201).json(savedRequest);
   } catch (error) {
-    console.error("Upload Error:", error);
     res.status(500).json({ message: `Server Error: ${error.message}` });
   }
 };
 
-// Get all requests for the logged-in student
+// --- The rest of the functions in this file remain the same ---
+
 exports.getStudentRequests = async (req, res) => {
   try {
     const requests = await CertificateRequest.find({ student: req.user.id }).sort({ createdAt: -1 });
@@ -75,7 +76,6 @@ exports.getStudentRequests = async (req, res) => {
   }
 };
 
-// Get all requests (for Admin)
 exports.getAllRequests = async (req, res) => {
   try {
     const requests = await CertificateRequest.find({}).populate('student', 'name email studentId department').sort({ createdAt: -1 });
@@ -85,7 +85,6 @@ exports.getAllRequests = async (req, res) => {
   }
 };
 
-// Update a request status (for Admin)
 exports.updateRequestStatus = async (req, res) => {
   const { status, comment } = req.body;
   try {
