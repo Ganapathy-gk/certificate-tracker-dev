@@ -18,16 +18,15 @@ const StudentDashboard = () => {
 
   const statusSteps = ['Requested', 'In Process', 'Signed by HOD', 'Principal Approval', 'Ready'];
   
-  // UPDATED: Progress function handles 'Rejected' status
   const getProgress = (currentStatus) => {
     if (currentStatus === 'Collected') return 100;
-    if (currentStatus === 'Rejected') return 100; // Show a full red bar for rejected
+    if (currentStatus === 'Rejected') return 100;
     const currentIndex = statusSteps.indexOf(currentStatus);
     return ((currentIndex + 1) / statusSteps.length) * 100;
   };
 
   const fetchRequests = async () => {
-    if (!user) return; // Guard clause
+    if (!user) return;
     try {
       const config = { headers: { Authorization: `Bearer ${user.token}` } };
       const { data } = await axios.get(`${API_BASE_URL}/api/certificates/my-requests`, config);
@@ -65,7 +64,6 @@ const StudentDashboard = () => {
       }
     } catch (error) {
       alert('Failed to submit request.');
-      console.error(error);
     }
   };
 
@@ -99,8 +97,15 @@ const StudentDashboard = () => {
                 <textarea id="purpose" value={purpose} onChange={(e) => setPurpose(e.target.value)} required placeholder="Enter the purpose for this certificate"></textarea>
             </div>
             <div className="form-group">
-                <label htmlFor="document">Supporting Document (PDF, PNG, JPG - max 1MB)</label>
-                <input type="file" id="document" ref={fileInputRef} onChange={(e) => setDocument(e.target.files[0])} />
+                <label htmlFor="document">Supporting Document (JPEG or PNG only)</label>
+                {/* UPDATED: Added the 'accept' attribute to the input */}
+                <input 
+                  type="file" 
+                  id="document" 
+                  ref={fileInputRef} 
+                  onChange={(e) => setDocument(e.target.files[0])} 
+                  accept="image/jpeg, image/png"
+                />
             </div>
             <div className="form-group">
                 <label htmlFor="notes">Additional Notes (Optional)</label>
@@ -122,7 +127,6 @@ const StudentDashboard = () => {
                   </div>
                   <p className="purpose-text"><strong>Purpose:</strong> {req.purpose}</p>
                   
-                  {/* ADDED: This block shows the rejection reason */}
                   {req.status === 'Rejected' && req.remarks.length > 1 && (
                     <p className="rejection-reason">
                       <strong>Reason:</strong> {req.remarks[req.remarks.length - 1].comment}
@@ -130,7 +134,6 @@ const StudentDashboard = () => {
                   )}
 
                   <div className="progress-container">
-                    {/* UPDATED: Progress bar is now red for rejected status */}
                     <div 
                       className={`progress-bar ${req.status === 'Rejected' ? 'rejected' : ''}`} 
                       style={{ width: `${getProgress(req.status)}%` }}
