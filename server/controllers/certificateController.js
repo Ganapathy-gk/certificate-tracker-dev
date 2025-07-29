@@ -1,6 +1,7 @@
 const CertificateRequest = require('../models/CertificateRequest');
 const cloudinary = require('cloudinary').v2;
 const streamifier = require('streamifier');
+const path = require('path');
 
 // Configure Cloudinary
 cloudinary.config({
@@ -18,22 +19,17 @@ exports.createRequest = async (req, res) => {
     let documentPublicId = '';
 
     if (req.file) {
-      // Create a unique filename without the extension
-      const uniqueFilename = `${req.user.studentId}_${Date.now()}`;
-
-      // Determine the resource type based on the file's mimetype
-      let resource_type = 'raw';
-      if (req.file.mimetype.startsWith('image/')) {
-        resource_type = 'image';
-      }
+      // This new logic preserves the file extension correctly
+      const fileName = path.parse(req.file.originalname).name;
+      const uniquePublicId = `certificates/${req.user.studentId}_${Date.now()}_${fileName}`;
 
       const streamUpload = (req) => {
         return new Promise((resolve, reject) => {
           const stream = cloudinary.uploader.upload_stream(
             { 
-              folder: 'certificates',
-              public_id: uniqueFilename,
-              resource_type: resource_type, // Use the detected resource type
+              public_id: uniquePublicId,
+              resource_type: 'auto', // Let Cloudinary detect if it's an image, pdf, etc.
+              folder: 'certificates'
             },
             (error, result) => {
               if (result) { resolve(result); } 
