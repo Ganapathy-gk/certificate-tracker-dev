@@ -1,9 +1,8 @@
 const CertificateRequest = require('../models/CertificateRequest');
 const cloudinary = require('cloudinary').v2;
 const streamifier = require('streamifier');
-const path = require('path');
 
-// Configure Cloudinary
+// Configure Cloudinary with credentials from your .env file
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
     api_key: process.env.CLOUDINARY_API_KEY,
@@ -18,22 +17,18 @@ exports.createRequest = async (req, res) => {
     let documentUrl = '';
     let documentPublicId = '';
 
+    // If a file is part of the request, upload it to Cloudinary
     if (req.file) {
-      // This new logic preserves the file extension correctly
-      const fileName = path.parse(req.file.originalname).name;
-      const uniquePublicId = `certificates/${req.user.studentId}_${Date.now()}_${fileName}`;
-
       const streamUpload = (req) => {
         return new Promise((resolve, reject) => {
           const stream = cloudinary.uploader.upload_stream(
-            { 
-              public_id: uniquePublicId,
-              resource_type: 'auto', // Let Cloudinary detect if it's an image, pdf, etc.
-              folder: 'certificates'
-            },
+            { resource_type: 'auto', folder: 'certificates' },
             (error, result) => {
-              if (result) { resolve(result); } 
-              else { reject(error); }
+              if (result) {
+                resolve(result);
+              } else {
+                reject(error);
+              }
             }
           );
           streamifier.createReadStream(req.file.buffer).pipe(stream);
@@ -61,8 +56,7 @@ exports.createRequest = async (req, res) => {
   }
 };
 
-// --- The rest of the functions in this file remain the same ---
-
+// Get all requests for the logged-in student
 exports.getStudentRequests = async (req, res) => {
   try {
     const requests = await CertificateRequest.find({ student: req.user.id }).sort({ createdAt: -1 });
@@ -72,8 +66,10 @@ exports.getStudentRequests = async (req, res) => {
   }
 };
 
+// Get all requests (for Admin)
 exports.getAllRequests = async (req, res) => {
   try {
+    // UPDATED: Added 'department' to the populate method
     const requests = await CertificateRequest.find({}).populate('student', 'name email studentId department').sort({ createdAt: -1 });
     res.json(requests);
   } catch (error) {
@@ -81,6 +77,7 @@ exports.getAllRequests = async (req, res) => {
   }
 };
 
+// Update a request status (for Admin)
 exports.updateRequestStatus = async (req, res) => {
   const { status, comment } = req.body;
   try {
