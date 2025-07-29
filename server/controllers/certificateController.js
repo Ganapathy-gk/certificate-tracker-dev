@@ -1,8 +1,9 @@
 const CertificateRequest = require('../models/CertificateRequest');
 const cloudinary = require('cloudinary').v2;
 const streamifier = require('streamifier');
+const path = require('path'); // Import the path module
 
-// Configure Cloudinary with credentials from your .env file
+// Configure Cloudinary
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
     api_key: process.env.CLOUDINARY_API_KEY,
@@ -17,12 +18,18 @@ exports.createRequest = async (req, res) => {
     let documentUrl = '';
     let documentPublicId = '';
 
-    // If a file is part of the request, upload it to Cloudinary
     if (req.file) {
+      // Create a unique filename for the upload
+      const uniqueFilename = `${req.user.studentId}_${Date.now()}${path.extname(req.file.originalname)}`;
+
       const streamUpload = (req) => {
         return new Promise((resolve, reject) => {
           const stream = cloudinary.uploader.upload_stream(
-            { resource_type: 'auto', folder: 'certificates' },
+            { 
+              folder: 'certificates',
+              public_id: uniqueFilename, // Use our unique filename
+              resource_type: 'auto'
+            },
             (error, result) => {
               if (result) {
                 resolve(result);
@@ -52,9 +59,12 @@ exports.createRequest = async (req, res) => {
     const savedRequest = await newRequest.save();
     res.status(201).json(savedRequest);
   } catch (error) {
+    console.error("Upload Error:", error); // Added for better debugging
     res.status(500).json({ message: `Server Error: ${error.message}` });
   }
 };
+
+// --- The rest of the functions in this file remain the same ---
 
 // Get all requests for the logged-in student
 exports.getStudentRequests = async (req, res) => {
@@ -69,7 +79,6 @@ exports.getStudentRequests = async (req, res) => {
 // Get all requests (for Admin)
 exports.getAllRequests = async (req, res) => {
   try {
-    // UPDATED: Added 'department' to the populate method
     const requests = await CertificateRequest.find({}).populate('student', 'name email studentId department').sort({ createdAt: -1 });
     res.json(requests);
   } catch (error) {

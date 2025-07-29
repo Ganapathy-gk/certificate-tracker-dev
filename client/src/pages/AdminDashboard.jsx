@@ -3,7 +3,7 @@ import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
 import Clock from '../components/Clock';
 import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import autoTable from 'jspdf-autotable'; // Correct import for the plugin
 import './AdminDashboard.css';
 
 const AdminDashboard = () => {
@@ -14,6 +14,7 @@ const AdminDashboard = () => {
   const [newStatus, setNewStatus] = useState('');
   const [rejectionComment, setRejectionComment] = useState('');
 
+  // State for filters
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('All');
   const [filterType, setFilterType] = useState('All');
@@ -45,17 +46,16 @@ const AdminDashboard = () => {
     e.preventDefault();
     if (!selectedRequest) return;
     try {
-        const config = {
-            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${user.token}` },
-        };
-        const comment = newStatus === 'Rejected' ? rejectionComment : `Status updated to ${newStatus}`;
-        await axios.put(`${API_BASE_URL}/api/certificates/${selectedRequest._id}/update-status`, { status: newStatus, comment: comment }, config);
-        alert('Status updated successfully!');
-        setSelectedRequest(null);
-        fetchAllRequests();
+      const config = {
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${user.token}` },
+      };
+      const comment = newStatus === 'Rejected' ? rejectionComment : `Status updated to ${newStatus}`;
+      await axios.put(`${API_BASE_URL}/api/certificates/${selectedRequest._id}/update-status`, { status: newStatus, comment: comment }, config);
+      alert('Status updated successfully!');
+      setSelectedRequest(null);
+      fetchAllRequests();
     } catch (error) {
-        alert('Failed to update status.');
-        console.error(error);
+      alert('Failed to update status.');
     }
   };
 
@@ -75,10 +75,11 @@ const AdminDashboard = () => {
     return matchesSearch && matchesStatus && matchesType && matchesDate;
   });
 
+  // Corrected exportToPDF function
   const exportToPDF = () => {
     const doc = new jsPDF();
     doc.text("Certificate Requests Report", 14, 16);
-    autoTable(doc, {
+    autoTable(doc, { // Correct function call
       head: [['Student Name', 'Student ID', 'Department', 'Certificate Type', 'Status', 'Applied Date']],
       body: filteredRequests.map(req => [
         req.student?.name || 'N/A',
@@ -115,7 +116,7 @@ const AdminDashboard = () => {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
             />
-            <select value={filterStatus} onChange={(e) => setFilterStatus(e.taget.value)}>
+            <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
                 <option value="All">All Statuses</option>
                 <option value="Requested">Requested</option>
                 <option value="In Process">In Process</option>
@@ -154,6 +155,7 @@ const AdminDashboard = () => {
                     <td>{req.student?.name || 'N/A'}</td>
                     <td>{req.student?.studentId || 'N/A'}</td>
                     <td>{req.student?.department || 'N/A'}</td>
+                    <td>{req.certificateType}</td>
                     <td>
                         {req.documentUrl ? (<a href={req.documentUrl} target="_blank" rel="noopener noreferrer" className="action-button download-button">View</a>) : ('None')}
                     </td>
