@@ -10,16 +10,16 @@ const CertificateRequestSchema = new mongoose.Schema({
   documentPublicId: { type: String },
   status: {
     type: String,
+    // UPDATED: New, descriptive statuses for the workflow
     enum: [
-      'Requested',
-      'In Process',
-      'Signed by HOD',
-      'Principal Approval',
-      'Ready',
+      'Pending Adviser Approval',
+      'Pending HOD Approval',
+      'Pending Principal Approval',
+      'Ready for Collection',
       'Collected',
-      'Rejected' 
+      'Rejected'
     ],
-    default: 'Requested'
+    default: 'Pending Adviser Approval' // UPDATED: New default status
   },
   remarks: [{
     status: String,

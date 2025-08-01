@@ -1,3 +1,4 @@
+// client/src/pages/StudentDashboard.jsx
 import React, { useContext, useState, useEffect, useRef } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
@@ -16,12 +17,26 @@ const StudentDashboard = () => {
   const [notes, setNotes] = useState('');
   const [document, setDocument] = useState(null);
 
-  const statusSteps = ['Requested', 'In Process', 'Signed by HOD', 'Principal Approval', 'Ready'];
+  // UPDATED: Status steps now match the backend model
+  const statusSteps = [
+    'Pending Adviser Approval',
+    'Pending HOD Approval',
+    'Pending Principal Approval',
+    'Ready for Collection',
+    'Collected'
+  ];
   
   const getProgress = (currentStatus) => {
     if (currentStatus === 'Collected') return 100;
+    // If rejected, show a full red bar for clarity
     if (currentStatus === 'Rejected') return 100;
+    
     const currentIndex = statusSteps.indexOf(currentStatus);
+    
+    // If status is not in the main flow (or is the first step)
+    if (currentIndex === -1) return 0;
+    
+    // Calculate progress based on steps
     return ((currentIndex + 1) / statusSteps.length) * 100;
   };
 
@@ -56,6 +71,7 @@ const StudentDashboard = () => {
       await axios.post(`${API_BASE_URL}/api/certificates/request`, formData, config);
       alert('Request submitted successfully!');
       fetchRequests();
+      // Reset form fields
       setPurpose('');
       setNotes('');
       setDocument(null);
@@ -97,14 +113,13 @@ const StudentDashboard = () => {
                 <textarea id="purpose" value={purpose} onChange={(e) => setPurpose(e.target.value)} required placeholder="Enter the purpose for this certificate"></textarea>
             </div>
             <div className="form-group">
-                <label htmlFor="document">Supporting Document (JPEG or PNG only)</label>
-                {/* UPDATED: Added the 'accept' attribute to the input */}
+                <label htmlFor="document">Supporting Document (Optional)</label>
                 <input 
                   type="file" 
                   id="document" 
                   ref={fileInputRef} 
                   onChange={(e) => setDocument(e.target.files[0])} 
-                  accept="image/jpeg, image/png"
+                  accept="image/jpeg, image/png, application/pdf"
                 />
             </div>
             <div className="form-group">
@@ -127,7 +142,7 @@ const StudentDashboard = () => {
                   </div>
                   <p className="purpose-text"><strong>Purpose:</strong> {req.purpose}</p>
                   
-                  {req.status === 'Rejected' && req.remarks.length > 1 && (
+                  {req.status === 'Rejected' && req.remarks.length > 0 && (
                     <p className="rejection-reason">
                       <strong>Reason:</strong> {req.remarks[req.remarks.length - 1].comment}
                     </p>

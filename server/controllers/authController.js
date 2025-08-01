@@ -1,6 +1,9 @@
+// server/controllers/authController.js
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const transporter = require('../config/emailConfig');
+const crypto = require('crypto');
 
 // Helper function to generate a JWT token
 const generateToken = (id, role) => {
@@ -9,37 +12,38 @@ const generateToken = (id, role) => {
   });
 };
 
-/**
- * @desc    Register a new user (student or admin)
- * @route   POST /api/auth/register
- */
+// registerUser function
 exports.registerUser = async (req, res) => {
-  // UPDATED: 'department' is now being read from the request
   const { name, email, password, role, studentId, department } = req.body;
-
   try {
-    // Check if user already exists
     const userExists = await User.findOne({ email });
     if (userExists) {
       return res.status(400).json({ message: 'User already exists' });
     }
-
-    // Hash the password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
-
-    // Create the new user in the database
     const user = await User.create({
       name,
       email,
       password: hashedPassword,
       role: role || 'student',
       studentId,
-      department, // UPDATED: 'department' is now being saved
+      department,
     });
-
-    // If user creation is successful, respond with user data and token
     if (user) {
+      try {
+        const mailOptions = {
+          from: `"CertTrack" <${process.env.EMAIL_USER}>`,
+          to: user.email,
+          subject: 'Welcome to the Certificate Tracking App!',
+          html: `<h1>Hi ${user.name},</h1><p>Welcome! Your account has been created successfully.</p>`,
+        };
+        await transporter.sendMail(mailOptions);
+        console.log(`Welcome email sent to ${user.email}`);
+      } catch (emailError) {
+        console.error(`Failed to send welcome email: ${emailError.message}`);
+      }
+      
       res.status(201).json({
         _id: user._id,
         name: user.name,
@@ -55,20 +59,12 @@ exports.registerUser = async (req, res) => {
   }
 };
 
-/**
- * @desc    Authenticate a user and get a token (Login)
- * @route   POST /api/auth/login
- */
+// loginUser function
 exports.loginUser = async (req, res) => {
   const { email, password } = req.body;
-
   try {
-    // Find user by email
     const user = await User.findOne({ email });
-
-    // Check if user exists and password matches
     if (user && (await bcrypt.compare(password, user.password))) {
-      // Respond with user data and token
       res.json({
         _id: user._id,
         name: user.name,
@@ -81,5 +77,71 @@ exports.loginUser = async (req, res) => {
     }
   } catch (error) {
     res.status(500).json({ message: `Server Error: ${error.message}` });
+  }
+};
+
+// assignAdviser function
+exports.assignAdviser = async (req, res) => {
+  const { studentId, adviserId } = req.body;
+  try {
+    const student = await User.findById(studentId);
+    if (!student || student.role !== 'student') {
+      return res.status(404).json({ message: 'Student not found.' });
+    }
+    student.adviser = adviserId;
+    await student.save();
+    res.json({ message: 'Adviser assigned successfully.' });
+  } catch (error) {
+    res.status(500).json({ message: `Server Error: ${error.message}` });
+  }
+};
+
+// forgotPassword function
+exports.forgotPassword = async (req, res) => {
+  const { email } = req.body;
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(200).json({ message: 'If an account with that email exists, a reset link has been sent.' });
+    }
+    const resetToken = crypto.randomBytes(20).toString('hex');
+    user.passwordResetToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+    user.passwordResetExpires = Date.now() + 10 * 60 * 1000;
+    await user.save();
+    const resetUrl = `http://localhost:5173/reset-password/${resetToken}`;
+    const mailOptions = {
+      from: `"CertTrack" <${process.env.EMAIL_USER}>`,
+      to: user.email,
+      subject: 'Password Reset Request',
+      html: `<p>You requested a password reset. Please click this link to reset your password: <a href="${resetUrl}">${resetUrl}</a></p><p>This link will expire in 10 minutes.</p>`,
+    };
+    await transporter.sendMail(mailOptions);
+    res.status(200).json({ message: 'If an account with that email exists, a reset link has been sent.' });
+  } catch (error) {
+    console.error('FORGOT PASSWORD ERROR:', error);
+    res.status(500).json({ message: 'An error occurred.' });
+  }
+};
+
+// resetPassword function
+exports.resetPassword = async (req, res) => {
+  try {
+    const hashedToken = crypto.createHash('sha256').update(req.params.token).digest('hex');
+    const user = await User.findOne({
+      passwordResetToken: hashedToken,
+      passwordResetExpires: { $gt: Date.now() }, 
+    });
+    if (!user) {
+      return res.status(400).json({ message: 'Token is invalid or has expired.' });
+    }
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(req.body.password, salt);
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+    await user.save();
+    res.status(200).json({ message: 'Password has been reset successfully.' });
+  } catch (error) {
+    console.error('RESET PASSWORD ERROR:', error);
+    res.status(500).json({ message: 'Error resetting password.' });
   }
 };

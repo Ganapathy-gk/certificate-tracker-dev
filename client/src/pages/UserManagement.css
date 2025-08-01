@@ -1,0 +1,19 @@
+/* client/src/pages/UserManagement.css */
+.user-management-container {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: auto;
+}
+
+.modal-box {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 400px;
+  background-color: white;
+  border: 1px solid #000;
+  box-shadow: 24;
+  padding: 2rem;
+  border-radius: 8px;
+}

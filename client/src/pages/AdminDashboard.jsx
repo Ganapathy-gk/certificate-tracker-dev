@@ -1,61 +1,72 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { AuthContext } from '../context/AuthContext';
+import { Link } from 'react-router-dom';
 import axios from 'axios';
 import Clock from '../components/Clock';
 import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable'; // Correct import for the plugin
+import autoTable from 'jspdf-autotable';
+import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { Button } from '@mui/material';
 import './AdminDashboard.css';
+
+const STATUSES = [
+  'Pending Adviser Approval', 'Pending HOD Approval', 'Pending Principal Approval',
+  'Ready for Collection', 'Collected', 'Rejected'
+];
 
 const AdminDashboard = () => {
   const API_BASE_URL = import.meta.env.VITE_BACKEND_API_URL;
   const { user, logout } = useContext(AuthContext);
   const [requests, setRequests] = useState([]);
   const [selectedRequest, setSelectedRequest] = useState(null);
-  const [newStatus, setNewStatus] = useState('');
-  const [rejectionComment, setRejectionComment] = useState('');
-
-  // State for filters
+  const [actionComment, setActionComment] = useState('');
+  const [stats, setStats] = useState({ users: 0, requests: 0, statusCounts: {} });
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('All');
   const [filterType, setFilterType] = useState('All');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
-  const fetchAllRequests = async () => {
+  const fetchData = async () => {
     if (!user) return;
+    const config = { headers: { Authorization: `Bearer ${user.token}` } };
     try {
-      const config = { headers: { Authorization: `Bearer ${user.token}` } };
-      const { data } = await axios.get(`${API_BASE_URL}/api/certificates/all`, config);
-      setRequests(data);
+      const [requestsRes, statsRes] = await Promise.all([
+        axios.get(`${API_BASE_URL}/api/certificates/all`, config),
+        axios.get(`${API_BASE_URL}/api/admin/stats`, config)
+      ]);
+      setRequests(requestsRes.data);
+      setStats(statsRes.data);
     } catch (error) {
-      console.error('Failed to fetch requests', error);
+      console.error('Failed to fetch dashboard data', error);
     }
   };
 
   useEffect(() => {
-    fetchAllRequests();
+    fetchData();
   }, [user]);
 
   const handleUpdateClick = (request) => {
     setSelectedRequest(request);
-    setNewStatus(request.status);
-    setRejectionComment('');
+    setActionComment('');
   };
 
-  const handleStatusUpdate = async (e) => {
+  const handleProcessRequest = async (e, action) => {
     e.preventDefault();
     if (!selectedRequest) return;
+    if (action === 'reject' && !actionComment.trim()) {
+      alert('A comment is required to reject a request.');
+      return;
+    }
     try {
-      const config = {
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${user.token}` },
-      };
-      const comment = newStatus === 'Rejected' ? rejectionComment : `Status updated to ${newStatus}`;
-      await axios.put(`${API_BASE_URL}/api/certificates/${selectedRequest._id}/update-status`, { status: newStatus, comment: comment }, config);
-      alert('Status updated successfully!');
+      const config = { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${user.token}` } };
+      const payload = { action, comment: actionComment };
+      await axios.put(`${API_BASE_URL}/api/certificates/${selectedRequest._id}/process`, payload, config);
+      alert('Request processed successfully!');
       setSelectedRequest(null);
-      fetchAllRequests();
+      fetchData(); // Re-fetch all data
     } catch (error) {
-      alert('Failed to update status.');
+      alert(error.response?.data?.message || 'Failed to process request.');
     }
   };
 
@@ -69,17 +80,16 @@ const AdminDashboard = () => {
     const requestDate = new Date(req.createdAt);
     const start = startDate ? new Date(startDate) : null;
     const end = endDate ? new Date(endDate) : null;
-    if(start) start.setHours(0,0,0,0);
-    if(end) end.setHours(23,59,59,999);
+    if (start) start.setHours(0, 0, 0, 0);
+    if (end) end.setHours(23, 59, 59, 999);
     const matchesDate = (!start || requestDate >= start) && (!end || requestDate <= end);
     return matchesSearch && matchesStatus && matchesType && matchesDate;
   });
 
-  // Corrected exportToPDF function
   const exportToPDF = () => {
     const doc = new jsPDF();
     doc.text("Certificate Requests Report", 14, 16);
-    autoTable(doc, { // Correct function call
+    autoTable(doc, {
       head: [['Student Name', 'Student ID', 'Department', 'Certificate Type', 'Status', 'Applied Date']],
       body: filteredRequests.map(req => [
         req.student?.name || 'N/A',
@@ -94,11 +104,17 @@ const AdminDashboard = () => {
     doc.save('certificate-requests.pdf');
   };
 
+  const pieChartData = Object.entries(stats.statusCounts).map(([name, value]) => ({ name, value }));
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#AF19FF', '#FF1943'];
+
   return (
     <div className="dashboard-page">
       <header className="dashboard-header admin-header">
         <h2>CertTrack - Admin Panel</h2>
         <div className="header-right">
+          <Button component={Link} to="/user-management" variant="contained" style={{backgroundColor: '#fff', color: '#343a40'}}>
+            Manage Users
+          </Button>
           <Clock />
           <div className="header-user-info">
             <span>Welcome, {user?.name}! (Admin)</span>
@@ -106,29 +122,38 @@ const AdminDashboard = () => {
           </div>
         </div>
       </header>
+
+      <div className="stats-container">
+        <div className="stat-card"><h4>Total Users</h4><p>{stats.users}</p></div>
+        <div className="stat-card"><h4>Total Requests</h4><p>{stats.requests}</p></div>
+        <div className="stat-card"><h4>Pending Requests</h4><p>{(stats.statusCounts['Pending Adviser Approval'] || 0) + (stats.statusCounts['Pending HOD Approval'] || 0) + (stats.statusCounts['Pending Principal Approval'] || 0)}</p></div>
+        <div className="stat-card"><h4>Requests Ready</h4><p>{stats.statusCounts['Ready for Collection'] || 0}</p></div>
+      </div>
+      
       <main className="dashboard-main">
-        <div className="admin-main-content" style={{width: '100%'}}>
+        <div className="chart-container">
+          <h3>Requests by Status</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Pie data={pieChartData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} fill="#8884d8" label>
+                {pieChartData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip /><Legend />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+        
+        <div className="admin-main-content">
           <div className="filter-container">
-            <input 
-                type="text"
-                placeholder="Search by Student Name or ID..."
-                className="search-input"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-            />
+            <input type="text" placeholder="Search by Student Name or ID..." className="search-input" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
             <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
-                <option value="All">All Statuses</option>
-                <option value="Requested">Requested</option>
-                <option value="In Process">In Process</option>
-                <option value="Ready">Ready</option>
-                <option value="Collected">Collected</option>
-                <option value="Rejected">Rejected</option>
+              <option value="All">All Statuses</option>
+              {STATUSES.map(status => <option key={status} value={status}>{status}</option>)}
             </select>
             <select value={filterType} onChange={(e) => setFilterType(e.target.value)}>
-                <option value="All">All Types</option>
-                <option value="Bonafide">Bonafide</option>
-                <option value="Transfer Certificate">Transfer Certificate</option>
-                <option value="Marksheet Copy">Marksheet Copy</option>
+              <option value="All">All Types</option><option value="Bonafide">Bonafide</option><option value="Transfer Certificate">Transfer Certificate</option><option value="Marksheet Copy">Marksheet Copy</option>
             </select>
             <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
             <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
@@ -137,33 +162,14 @@ const AdminDashboard = () => {
           <div className="requests-table-container">
             <h3>All Certificate Requests</h3>
             <table>
-              <thead>
-                <tr>
-                  <th>Student Name</th>
-                  <th>Student ID</th>
-                  <th>Department</th>
-                  <th>Certificate Type</th>
-                  <th>Document</th>
-                  <th>Applied Date</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
+              <thead><tr><th>Student Name</th><th>Student ID</th><th>Department</th><th>Certificate Type</th><th>Document</th><th>Applied Date</th><th>Status</th><th>Actions</th></tr></thead>
               <tbody>
                 {filteredRequests.map((req) => (
                   <tr key={req._id}>
-                    <td>{req.student?.name || 'N/A'}</td>
-                    <td>{req.student?.studentId || 'N/A'}</td>
-                    <td>{req.student?.department || 'N/A'}</td>
-                    <td>{req.certificateType}</td>
-                    <td>
-                        {req.documentUrl ? (<a href={req.documentUrl} target="_blank" rel="noopener noreferrer" className="action-button download-button">View</a>) : ('None')}
-                    </td>
-                    <td>{new Date(req.createdAt).toLocaleDateString()}</td>
-                    <td><span className={`status-badge status-${req.status.toLowerCase().replace(/\s+/g, '-')}`}>{req.status}</span></td>
-                    <td>
-                      <button className="action-button" onClick={() => handleUpdateClick(req)}>Update</button>
-                    </td>
+                    <td>{req.student?.name || 'N/A'}</td><td>{req.student?.studentId || 'N/A'}</td><td>{req.student?.department || 'N/A'}</td><td>{req.certificateType}</td>
+                    <td>{req.documentUrl ? (<a href={req.documentUrl} target="_blank" rel="noopener noreferrer" className="action-button download-button">View</a>) : ('None')}</td>
+                    <td>{new Date(req.createdAt).toLocaleDateString()}</td><td><span className={`status-badge status-${req.status.toLowerCase().replace(/\s+/g, '-')}`}>{req.status}</span></td>
+                    <td><button className="action-button" onClick={() => handleUpdateClick(req)}>Process</button></td>
                   </tr>
                 ))}
               </tbody>
@@ -171,48 +177,26 @@ const AdminDashboard = () => {
           </div>
         </div>
       </main>
+
       {selectedRequest && (
-         <div className="modal-overlay">
-            <div className="modal-content">
-                <h3>Request Details</h3>
-                <p><strong>Student:</strong> {selectedRequest.student?.name}</p>
-                <p><strong>Certificate:</strong> {selectedRequest.certificateType}</p>
-                <p className="request-details"><strong>Purpose:</strong> {selectedRequest.purpose}</p>
-                {selectedRequest.notes && <p className="request-details"><strong>Notes:</strong> {selectedRequest.notes}</p>}
-                <hr className="divider" />
-                <form onSubmit={handleStatusUpdate}>
-                    <h4 className="update-status-header">Update Status</h4>
-                    <div className="form-group">
-                        <label htmlFor="status-select">New Status</label>
-                        <select id="status-select" value={newStatus} onChange={(e) => setNewStatus(e.target.value)}>
-                            <option value="Requested">Requested</option>
-                            <option value="In Process">In Process</option>
-                            <option value="Signed by HOD">Signed by HOD</option>
-                            <option value="Principal Approval">Principal Approval</option>
-                            <option value="Ready">Ready</option>
-                            <option value="Collected">Collected</option>
-                            <option value="Rejected">Rejected</option>
-                        </select>
-                    </div>
-                    {newStatus === 'Rejected' && (
-                        <div className="form-group">
-                            <label htmlFor="rejection-comment">Rejection Reason (Required)</label>
-                            <textarea 
-                                id="rejection-comment" 
-                                value={rejectionComment} 
-                                onChange={(e) => setRejectionComment(e.target.value)} 
-                                required
-                                placeholder="Provide a reason for rejection..."
-                            ></textarea>
-                        </div>
-                    )}
-                    <div className="modal-actions">
-                        <button type="submit" className="submit-button">Update Status</button>
-                        <button type="button" className="cancel-button" onClick={() => setSelectedRequest(null)}>Cancel</button>
-                    </div>
-                </form>
-            </div>
-         </div>
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h3>Process Request</h3>
+            <p><strong>Student:</strong> {selectedRequest.student?.name}</p><p><strong>Certificate:</strong> {selectedRequest.certificateType}</p><p><strong>Current Status:</strong> {selectedRequest.status}</p>
+            <p className="request-details"><strong>Purpose:</strong> {selectedRequest.purpose}</p>
+            {selectedRequest.notes && <p className="request-details"><strong>Notes:</strong> {selectedRequest.notes}</p>}
+            <hr className="divider" />
+            <form onSubmit={(e) => e.preventDefault()}>
+              <h4 className="update-status-header">Action</h4>
+               <div className="form-group"><label htmlFor="action-comment">Comment (Required for rejection)</label><textarea id="action-comment" value={actionComment} onChange={(e) => setActionComment(e.target.value)} placeholder="Provide a comment if necessary..."></textarea></div>
+              <div className="modal-actions">
+                <button type="button" className="action-button approve" onClick={(e) => handleProcessRequest(e, 'approve')}>Approve</button>
+                <button type="button" className="action-button reject" onClick={(e) => handleProcessRequest(e, 'reject')}>Reject</button>
+                <button type="button" className="cancel-button" onClick={() => setSelectedRequest(null)}>Cancel</button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );

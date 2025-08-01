@@ -1,3 +1,4 @@
+// server/server.js
 const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
@@ -5,6 +6,7 @@ const connectDB = require('./config/db');
 
 const authRoutes = require('./routes/authRoutes');
 const certificateRoutes = require('./routes/certificateRoutes');
+const adminRoutes = require('./routes/adminRoutes'); // <-- IMPORT NEW
 
 dotenv.config();
 connectDB();
@@ -31,6 +33,7 @@ app.use(express.json());
 
 app.use('/api/auth', authRoutes);
 app.use('/api/certificates', certificateRoutes);
+app.use('/api/admin', adminRoutes); // <-- USE NEW ADMIN ROUTES
 
 app.get('/', (req, res) => {
   res.send('Certificate Tracker API is running!');

@@ -1,3 +1,4 @@
+// server/middleware/authMiddleware.js
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
@@ -26,4 +27,14 @@ const admin = (req, res, next) => {
   }
 };
 
-module.exports = { protect, admin };
+// NEW: isStaff middleware to allow all non-student roles access
+const isStaff = (req, res, next) => {
+  const staffRoles = ['classAdviser', 'hod', 'principal', 'officeStaff', 'admin'];
+  if (req.user && staffRoles.includes(req.user.role)) {
+    next();
+  } else {
+    res.status(403).json({ message: 'Not authorized as staff' });
+  }
+};
+
+module.exports = { protect, admin, isStaff }; // Export the new middleware
