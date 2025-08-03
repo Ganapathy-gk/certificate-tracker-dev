@@ -108,7 +108,7 @@ exports.forgotPassword = async (req, res) => {
     user.passwordResetToken = crypto.createHash('sha256').update(resetToken).digest('hex');
     user.passwordResetExpires = Date.now() + 10 * 60 * 1000;
     await user.save();
-    const resetUrl = `http://localhost:5173/reset-password/${resetToken}`;
+const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
     const mailOptions = {
       from: `"CertTrack" <${process.env.EMAIL_USER}>`,
       to: user.email,
