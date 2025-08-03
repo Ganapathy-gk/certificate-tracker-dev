@@ -1,18 +1,15 @@
-// server/controllers/authController.js
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const transporter = require('../config/emailConfig');
 const crypto = require('crypto');
 
-// Helper function to generate a JWT token
 const generateToken = (id, role) => {
   return jwt.sign({ id, role }, process.env.JWT_SECRET, {
     expiresIn: '30d',
   });
 };
 
-// registerUser function
 exports.registerUser = async (req, res) => {
   const { name, email, password, role, studentId, department } = req.body;
   try {
@@ -22,35 +19,20 @@ exports.registerUser = async (req, res) => {
     }
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
-    const user = await User.create({
-      name,
-      email,
-      password: hashedPassword,
-      role: role || 'student',
-      studentId,
-      department,
-    });
+    const user = await User.create({ name, email, password: hashedPassword, role: role || 'student', studentId, department });
     if (user) {
       try {
-        const mailOptions = {
+        await transporter.sendMail({
           from: `"CertTrack" <${process.env.EMAIL_USER}>`,
           to: user.email,
           subject: 'Welcome to the Certificate Tracking App!',
           html: `<h1>Hi ${user.name},</h1><p>Welcome! Your account has been created successfully.</p>`,
-        };
-        await transporter.sendMail(mailOptions);
+        });
         console.log(`Welcome email sent to ${user.email}`);
       } catch (emailError) {
         console.error(`Failed to send welcome email: ${emailError.message}`);
       }
-      
-      res.status(201).json({
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        token: generateToken(user._id, user.role),
-      });
+      res.status(201).json({ _id: user._id, name: user.name, email: user.email, role: user.role, token: generateToken(user._id, user.role) });
     } else {
       res.status(400).json({ message: 'Invalid user data' });
     }
@@ -59,19 +41,12 @@ exports.registerUser = async (req, res) => {
   }
 };
 
-// loginUser function
 exports.loginUser = async (req, res) => {
   const { email, password } = req.body;
   try {
     const user = await User.findOne({ email });
     if (user && (await bcrypt.compare(password, user.password))) {
-      res.json({
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        token: generateToken(user._id, user.role),
-      });
+      res.json({ _id: user._id, name: user.name, email: user.email, role: user.role, token: generateToken(user._id, user.role) });
     } else {
       res.status(401).json({ message: 'Invalid email or password' });
     }
@@ -80,7 +55,6 @@ exports.loginUser = async (req, res) => {
   }
 };
 
-// assignAdviser function
 exports.assignAdviser = async (req, res) => {
   const { studentId, adviserId } = req.body;
   try {
@@ -96,7 +70,6 @@ exports.assignAdviser = async (req, res) => {
   }
 };
 
-// forgotPassword function
 exports.forgotPassword = async (req, res) => {
   const { email } = req.body;
   try {
@@ -108,14 +81,16 @@ exports.forgotPassword = async (req, res) => {
     user.passwordResetToken = crypto.createHash('sha256').update(resetToken).digest('hex');
     user.passwordResetExpires = Date.now() + 10 * 60 * 1000;
     await user.save();
-const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
-    const mailOptions = {
+    
+    // This is the corrected line
+    const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
+
+    await transporter.sendMail({
       from: `"CertTrack" <${process.env.EMAIL_USER}>`,
       to: user.email,
       subject: 'Password Reset Request',
       html: `<p>You requested a password reset. Please click this link to reset your password: <a href="${resetUrl}">${resetUrl}</a></p><p>This link will expire in 10 minutes.</p>`,
-    };
-    await transporter.sendMail(mailOptions);
+    });
     res.status(200).json({ message: 'If an account with that email exists, a reset link has been sent.' });
   } catch (error) {
     console.error('FORGOT PASSWORD ERROR:', error);
@@ -123,7 +98,6 @@ const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
   }
 };
 
-// resetPassword function
 exports.resetPassword = async (req, res) => {
   try {
     const hashedToken = crypto.createHash('sha256').update(req.params.token).digest('hex');
