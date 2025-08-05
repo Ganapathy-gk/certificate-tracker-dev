@@ -5,7 +5,7 @@ import axios from 'axios';
 import Clock from '../components/Clock';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { PieChart, Pie, Cell, Legend, ResponsiveContainer, Sector } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Sector } from 'recharts';
 import { Button } from '@mui/material';
 import './AdminDashboard.css';
 
@@ -190,7 +190,7 @@ const AdminDashboard = () => {
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
-              <Legend layout="vertical" verticalAlign="middle" align="right" wrapperStyle={{ right: -10, top: '20%' }} />
+              {/* The <Legend /> component has been removed */}
             </PieChart>
           </ResponsiveContainer>
         </div>
