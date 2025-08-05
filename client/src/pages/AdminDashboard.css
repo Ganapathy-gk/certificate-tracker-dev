@@ -233,3 +233,12 @@ tr:hover {
         grid-template-columns: 1fr; /* Stack chart and table on smaller screens */
     }
 }
+
+/* Add to the end of AdminDashboard.css */
+.chart-container .recharts-legend-wrapper {
+  right: 0 !important;
+}
+
+.chart-container .recharts-surface {
+  overflow: visible; /* Allows the active shape labels to show */
+}
