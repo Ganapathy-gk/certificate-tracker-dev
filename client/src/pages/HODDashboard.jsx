@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
-import { Box, Paper, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, Modal, TextareaAutosize } from '@mui/material';
+import { Box, Paper, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, Modal, TextareaAutosize, Link } from '@mui/material';
 import Clock from '../components/Clock';
-import '../pages/AdminDashboard.css'; // Reusing admin styles
+import '../pages/AdminDashboard.css';
 
 const API_BASE_URL = import.meta.env.VITE_BACKEND_API_URL;
 
@@ -14,6 +14,7 @@ const HODDashboard = () => {
   const [actionComment, setActionComment] = useState('');
 
   const fetchRequests = async () => {
+    if (!user) return;
     try {
       const config = { headers: { Authorization: `Bearer ${user.token}` } };
       const { data } = await axios.get(`${API_BASE_URL}/api/certificates/all`, config);
@@ -38,7 +39,7 @@ const HODDashboard = () => {
       return;
     }
     try {
-      const config = { headers: { Authorization: `Bearer ${user.token}` } };
+      const config = { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${user.token}` } };
       const payload = { action, comment: actionComment };
       await axios.put(`${API_BASE_URL}/api/certificates/${selectedRequest._id}/process`, payload, config);
       alert('Request processed successfully!');
@@ -49,7 +50,6 @@ const HODDashboard = () => {
     }
   };
   
-  // CLIENT-SIDE FILTER: Show only requests waiting for HOD approval
   const actionableRequests = requests.filter(req => req.status === 'Pending HOD Approval');
 
   return (
@@ -70,15 +70,28 @@ const HODDashboard = () => {
             <Typography variant="h5" sx={{ p: 2 }}>Action Required</Typography>
             <Table>
               <TableHead>
-                <TableRow><TableCell>Student Name</TableCell><TableCell>Certificate Type</TableCell><TableCell>Status</TableCell><TableCell align="right">Actions</TableCell></TableRow>
+                <TableRow>
+                  <TableCell>Student Name</TableCell>
+                  <TableCell>Certificate Type</TableCell>
+                  <TableCell>Document</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell align="right">Actions</TableCell>
+                </TableRow>
               </TableHead>
               <TableBody>
                 {actionableRequests.map((req) => (
                   <TableRow key={req._id}>
                     <TableCell>{req.student?.name || 'N/A'}</TableCell>
                     <TableCell>{req.certificateType}</TableCell>
+                    <TableCell>
+                      {req.documentUrl ? (
+                        <Link href={req.documentUrl} target="_blank" rel="noopener noreferrer">View</Link>
+                      ) : ('None')}
+                    </TableCell>
                     <TableCell><span className={`status-badge status-${req.status.toLowerCase().replace(/\s+/g, '-')}`}>{req.status}</span></TableCell>
-                    <TableCell align="right"><Button variant="outlined" onClick={() => handleProcessClick(req)}>Process</Button></TableCell>
+                    <TableCell align="right">
+                      <Button variant="outlined" onClick={() => handleProcessClick(req)}>Process</Button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -87,7 +100,6 @@ const HODDashboard = () => {
         </Paper>
       </main>
 
-      {/* Process Request Modal (same as Adviser) */}
       {selectedRequest && (
         <Modal open={!!selectedRequest} onClose={() => setSelectedRequest(null)}>
           <Box className="modal-box">
@@ -95,7 +107,18 @@ const HODDashboard = () => {
             <Typography sx={{ mt: 2 }}><b>Student:</b> {selectedRequest.student?.name}</Typography>
             <Typography><b>Certificate:</b> {selectedRequest.certificateType}</Typography>
             <Typography><b>Purpose:</b> {selectedRequest.purpose}</Typography>
-            <TextareaAutosize minRows={3} placeholder="Comment (Required for rejection)" style={{ width: '100%', marginTop: '1rem', padding: '0.5rem' }} value={actionComment} onChange={(e) => setActionComment(e.target.value)} />
+            {selectedRequest.documentUrl && (
+              <Typography>
+                <b>Document:</b> <Link href={selectedRequest.documentUrl} target="_blank" rel="noopener noreferrer">View Document</Link>
+              </Typography>
+            )}
+            <TextareaAutosize
+              minRows={3}
+              placeholder="Comment (Required for rejection)"
+              style={{ width: '100%', marginTop: '1rem', padding: '0.5rem' }}
+              value={actionComment}
+              onChange={(e) => setActionComment(e.target.value)}
+            />
             <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
               <Button variant="outlined" onClick={() => setSelectedRequest(null)}>Cancel</Button>
               <Button variant="contained" color="error" onClick={() => handleProcessRequest('reject')}>Reject</Button>

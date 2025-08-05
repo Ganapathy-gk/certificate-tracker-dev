@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
-import { Box, Paper, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, Modal, TextareaAutosize } from '@mui/material';
+import { Box, Paper, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, Modal, TextareaAutosize, Link } from '@mui/material';
 import Clock from '../components/Clock';
-import '../pages/AdminDashboard.css'; // Reusing admin styles
+import '../pages/AdminDashboard.css';
 
 const API_BASE_URL = import.meta.env.VITE_BACKEND_API_URL;
 
@@ -14,6 +14,7 @@ const PrincipalDashboard = () => {
   const [actionComment, setActionComment] = useState('');
 
   const fetchRequests = async () => {
+    if (!user) return;
     try {
       const config = { headers: { Authorization: `Bearer ${user.token}` } };
       const { data } = await axios.get(`${API_BASE_URL}/api/certificates/all`, config);
@@ -38,19 +39,17 @@ const PrincipalDashboard = () => {
       return;
     }
     try {
-      const config = { headers: { Authorization: `Bearer ${user.token}` } };
+      const config = { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${user.token}` } };
       const payload = { action, comment: actionComment };
       await axios.put(`${API_BASE_URL}/api/certificates/${selectedRequest._id}/process`, payload, config);
       alert('Request processed successfully!');
       setSelectedRequest(null);
       fetchRequests();
-    } catch (error)
-      {
+    } catch (error) {
       alert(error.response?.data?.message || 'Failed to process request.');
     }
   };
   
-  // CLIENT-SIDE FILTER: Show only requests waiting for Principal approval
   const actionableRequests = requests.filter(req => req.status === 'Pending Principal Approval');
 
   return (
@@ -74,6 +73,7 @@ const PrincipalDashboard = () => {
                 <TableRow>
                   <TableCell>Student Name</TableCell>
                   <TableCell>Certificate Type</TableCell>
+                  <TableCell>Document</TableCell>
                   <TableCell>Status</TableCell>
                   <TableCell align="right">Actions</TableCell>
                 </TableRow>
@@ -83,6 +83,11 @@ const PrincipalDashboard = () => {
                   <TableRow key={req._id}>
                     <TableCell>{req.student?.name || 'N/A'}</TableCell>
                     <TableCell>{req.certificateType}</TableCell>
+                    <TableCell>
+                      {req.documentUrl ? (
+                        <Link href={req.documentUrl} target="_blank" rel="noopener noreferrer">View</Link>
+                      ) : ('None')}
+                    </TableCell>
                     <TableCell><span className={`status-badge status-${req.status.toLowerCase().replace(/\s+/g, '-')}`}>{req.status}</span></TableCell>
                     <TableCell align="right">
                       <Button variant="outlined" onClick={() => handleProcessClick(req)}>Process</Button>
@@ -95,7 +100,6 @@ const PrincipalDashboard = () => {
         </Paper>
       </main>
 
-      {/* Process Request Modal */}
       {selectedRequest && (
         <Modal open={!!selectedRequest} onClose={() => setSelectedRequest(null)}>
           <Box className="modal-box">
@@ -103,6 +107,11 @@ const PrincipalDashboard = () => {
             <Typography sx={{ mt: 2 }}><b>Student:</b> {selectedRequest.student?.name}</Typography>
             <Typography><b>Certificate:</b> {selectedRequest.certificateType}</Typography>
             <Typography><b>Purpose:</b> {selectedRequest.purpose}</Typography>
+            {selectedRequest.documentUrl && (
+              <Typography>
+                <b>Document:</b> <Link href={selectedRequest.documentUrl} target="_blank" rel="noopener noreferrer">View Document</Link>
+              </Typography>
+            )}
             <TextareaAutosize
               minRows={3}
               placeholder="Comment (Required for rejection)"

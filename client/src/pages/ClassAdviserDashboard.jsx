@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
-import { Box, Paper, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, Modal, TextareaAutosize } from '@mui/material';
+import { Box, Paper, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, Modal, TextareaAutosize, Link } from '@mui/material';
 import Clock from '../components/Clock';
-import '../pages/AdminDashboard.css'; // Reusing admin styles
+import '../pages/AdminDashboard.css';
 
 const API_BASE_URL = import.meta.env.VITE_BACKEND_API_URL;
 
@@ -13,20 +13,20 @@ const ClassAdviserDashboard = () => {
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [actionComment, setActionComment] = useState('');
 
-  const fetchRequests = async () => {
+  const fetchRequests = useCallback(async () => {
+    if (!user) return;
     try {
       const config = { headers: { Authorization: `Bearer ${user.token}` } };
-      // This endpoint automatically filters requests for the logged-in adviser on the backend
       const { data } = await axios.get(`${API_BASE_URL}/api/certificates/all`, config);
       setRequests(data);
     } catch (error) {
       console.error("Failed to fetch requests", error);
     }
-  };
+  }, [user]);
 
   useEffect(() => {
-    if(user) fetchRequests();
-  }, [user]);
+    fetchRequests();
+  }, [fetchRequests]);
 
   const handleProcessClick = (request) => {
     setSelectedRequest(request);
@@ -39,7 +39,7 @@ const ClassAdviserDashboard = () => {
       return;
     }
     try {
-      const config = { headers: { Authorization: `Bearer ${user.token}` } };
+      const config = { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${user.token}` } };
       const payload = { action, comment: actionComment };
       await axios.put(`${API_BASE_URL}/api/certificates/${selectedRequest._id}/process`, payload, config);
       alert('Request processed successfully!');
@@ -50,7 +50,6 @@ const ClassAdviserDashboard = () => {
     }
   };
   
-  // Filter for requests that the adviser needs to act on
   const actionableRequests = requests.filter(req => req.status === 'Pending Adviser Approval');
 
   return (
@@ -74,6 +73,7 @@ const ClassAdviserDashboard = () => {
                 <TableRow>
                   <TableCell>Student Name</TableCell>
                   <TableCell>Certificate Type</TableCell>
+                  <TableCell>Document</TableCell>
                   <TableCell>Status</TableCell>
                   <TableCell align="right">Actions</TableCell>
                 </TableRow>
@@ -83,6 +83,11 @@ const ClassAdviserDashboard = () => {
                   <TableRow key={req._id}>
                     <TableCell>{req.student?.name || 'N/A'}</TableCell>
                     <TableCell>{req.certificateType}</TableCell>
+                    <TableCell>
+                      {req.documentUrl ? (
+                        <Link href={req.documentUrl} target="_blank" rel="noopener noreferrer">View</Link>
+                      ) : ('None')}
+                    </TableCell>
                     <TableCell><span className={`status-badge status-${req.status.toLowerCase().replace(/\s+/g, '-')}`}>{req.status}</span></TableCell>
                     <TableCell align="right">
                       <Button variant="outlined" onClick={() => handleProcessClick(req)}>Process</Button>
@@ -95,7 +100,6 @@ const ClassAdviserDashboard = () => {
         </Paper>
       </main>
 
-      {/* Process Request Modal */}
       {selectedRequest && (
         <Modal open={!!selectedRequest} onClose={() => setSelectedRequest(null)}>
           <Box className="modal-box">
@@ -103,6 +107,11 @@ const ClassAdviserDashboard = () => {
             <Typography sx={{ mt: 2 }}><b>Student:</b> {selectedRequest.student?.name}</Typography>
             <Typography><b>Certificate:</b> {selectedRequest.certificateType}</Typography>
             <Typography><b>Purpose:</b> {selectedRequest.purpose}</Typography>
+            {selectedRequest.documentUrl && (
+              <Typography>
+                <b>Document:</b> <Link href={selectedRequest.documentUrl} target="_blank" rel="noopener noreferrer">View Document</Link>
+              </Typography>
+            )}
             <TextareaAutosize
               minRows={3}
               placeholder="Comment (Required for rejection)"
