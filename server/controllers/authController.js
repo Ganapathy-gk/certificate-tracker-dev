@@ -5,9 +5,7 @@ const transporter = require('../config/emailConfig');
 const crypto = require('crypto');
 
 const generateToken = (id, role) => {
-  return jwt.sign({ id, role }, process.env.JWT_SECRET, {
-    expiresIn: '30d',
-  });
+  return jwt.sign({ id, role }, process.env.JWT_SECRET, { expiresIn: '30d' });
 };
 
 exports.registerUser = async (req, res) => {
@@ -26,16 +24,7 @@ exports.registerUser = async (req, res) => {
           from: `"CertTrack" <${process.env.SENDER_EMAIL}>`,
           to: user.email,
           subject: 'Welcome to CertTrack - Your Account is Ready!',
-          html: `
-            <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-              <h2>Welcome to CertTrack, ${user.name}!</h2>
-              <p>Your account has been successfully created.</p>
-              <p>You can now log in to the portal to submit and track your certificate requests.</p>
-              <br>
-              <p>Thank you,</p>
-              <p><strong>The CertTrack Team</strong></p>
-            </div>
-          `,
+          html: `<div style="font-family: Arial, sans-serif; line-height: 1.6;"><h2>Welcome to CertTrack, ${user.name}!</h2><p>Your account has been successfully created.</p><p>You can now log in to the portal to submit and track your certificate requests.</p><br><p>Thank you,</p><p><strong>The CertTrack Team</strong></p></div>`,
         });
         console.log(`Welcome email sent to ${user.email}`);
       } catch (emailError) {
@@ -90,30 +79,12 @@ exports.forgotPassword = async (req, res) => {
     user.passwordResetToken = crypto.createHash('sha256').update(resetToken).digest('hex');
     user.passwordResetExpires = Date.now() + 10 * 60 * 1000;
     await user.save();
-    
     const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
-
     await transporter.sendMail({
       from: `"CertTrack" <${process.env.SENDER_EMAIL}>`,
       to: user.email,
       subject: 'CertTrack: Password Reset Request',
-      html: `
-        <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-          <h2>Password Reset Request</h2>
-          <p>You requested a password reset. Please click the button below to set a new password.</p>
-          <p style="text-align: center;">
-            <a href="${resetUrl}" 
-               style="background-color: #007bff; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; display: inline-block;">
-              Reset Your Password
-            </a>
-          </p>
-          <p>This link is valid for 10 minutes.</p>
-          <p>If you did not request this, please ignore this email.</p>
-          <br>
-          <p>Thank you,</p>
-          <p><strong>The CertTrack Team</strong></p>
-        </div>
-      `,
+      html: `<div style="font-family: Arial, sans-serif; line-height: 1.6;"><h2>Password Reset Request</h2><p>Please click the button below to set a new password.</p><p style="text-align: center;"><a href="${resetUrl}" style="background-color: #007bff; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; display: inline-block;">Reset Your Password</a></p><p>This link is valid for 10 minutes.</p><p>If you did not request this, please ignore this email.</p><br><p>Thank you,</p><p><strong>The CertTrack Team</strong></p></div>`,
     });
     res.status(200).json({ message: 'If an account with that email exists, a reset link has been sent.' });
   } catch (error) {
