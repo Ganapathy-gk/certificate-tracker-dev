@@ -25,8 +25,17 @@ exports.registerUser = async (req, res) => {
         await transporter.sendMail({
           from: `"CertTrack" <${process.env.EMAIL_USER}>`,
           to: user.email,
-          subject: 'Welcome to the Certificate Tracking App!',
-          html: `<h1>Hi ${user.name},</h1><p>Welcome! Your account has been created successfully.</p>`,
+          subject: 'Welcome to CertTrack - Your Account is Ready!',
+          html: `
+            <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+              <h2>Welcome to CertTrack, ${user.name}!</h2>
+              <p>Your account has been successfully created.</p>
+              <p>You can now log in to the portal to submit and track your certificate requests.</p>
+              <br>
+              <p>Thank you,</p>
+              <p><strong>The CertTrack Team</strong></p>
+            </div>
+          `,
         });
         console.log(`Welcome email sent to ${user.email}`);
       } catch (emailError) {
@@ -82,14 +91,29 @@ exports.forgotPassword = async (req, res) => {
     user.passwordResetExpires = Date.now() + 10 * 60 * 1000;
     await user.save();
     
-    // This is the corrected line
     const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
 
     await transporter.sendMail({
       from: `"CertTrack" <${process.env.EMAIL_USER}>`,
       to: user.email,
-      subject: 'Password Reset Request',
-      html: `<p>You requested a password reset. Please click this link to reset your password: <a href="${resetUrl}">${resetUrl}</a></p><p>This link will expire in 10 minutes.</p>`,
+      subject: 'CertTrack: Password Reset Request',
+      html: `
+        <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+          <h2>Password Reset Request</h2>
+          <p>You requested a password reset. Please click the button below to set a new password.</p>
+          <p style="text-align: center;">
+            <a href="${resetUrl}" 
+               style="background-color: #007bff; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; display: inline-block;">
+              Reset Your Password
+            </a>
+          </p>
+          <p>This link is valid for 10 minutes.</p>
+          <p>If you did not request this, please ignore this email.</p>
+          <br>
+          <p>Thank you,</p>
+          <p><strong>The CertTrack Team</strong></p>
+        </div>
+      `,
     });
     res.status(200).json({ message: 'If an account with that email exists, a reset link has been sent.' });
   } catch (error) {
