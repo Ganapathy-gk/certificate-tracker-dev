@@ -16,15 +16,13 @@ const STATUSES = [
 
 // Custom component for the interactive slice of the pie chart
 const renderActiveShape = (props) => {
-  const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, payload, value } = props;
+  const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percent, value } = props;
 
   return (
     <g>
-      <text x={cx} y={cy - 10} textAnchor="middle" fill="#333" fontSize="2rem" fontWeight="bold">
-        {value}
-      </text>
-      <text x={cx} y={cy + 10} textAnchor="middle" fill="#999" fontSize="1rem">
-        Requests
+      {/* UPDATED: Show the STATUS NAME in the middle of the donut */}
+      <text x={cx} y={cy} dy={8} textAnchor="middle" fill={fill} fontSize="1rem" fontWeight="bold">
+        {payload.name}
       </text>
       <Sector
         cx={cx} cy={cy} innerRadius={innerRadius} outerRadius={outerRadius}
@@ -131,7 +129,7 @@ const AdminDashboard = () => {
   };
 
   const pieChartData = Object.entries(stats.statusCounts).map(([name, value]) => ({ name, value }));
-  const COLORS = ['#0088FE', '#00C_CHAR', '#FFBB28', '#FF8042', '#AF19FF', '#FF1943'];
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#AF19FF', '#FF1943'];
 
   return (
     <div className="dashboard-page">

@@ -20,30 +20,103 @@ const UserManagement = () => {
   const [assigningStudent, setAssigningStudent] = useState(null);
   const [selectedAdviserId, setSelectedAdviserId] = useState('');
 
-  // --- NEW STATE FOR FILTERS AND SEARCH ---
+  // State for filters and search
   const [searchTerm, setSearchTerm] = useState('');
   const [departmentFilter, setDepartmentFilter] = useState('All');
 
-  const fetchUsers = async () => { /* ... existing function ... */ };
-  useEffect(() => { /* ... existing function ... */ }, [user]);
+  const fetchUsers = async () => {
+    if (!user) return;
+    try {
+      const config = { headers: { Authorization: `Bearer ${user.token}` } };
+      const { data } = await axios.get(`${API_BASE_URL}/api/admin/users`, config);
+      setUsers(data);
+    } catch (error) {
+      console.error("Failed to fetch users", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, [user]);
+
+  const handleEditOpen = (userToEdit) => {
+    setEditingUser(userToEdit);
+    setFormData({ role: userToEdit.role, department: userToEdit.department || '' });
+  };
+
+  const handleEditClose = () => {
+    setEditingUser(null);
+  };
+
+  const handleFormChange = (event) => {
+    setFormData({ ...formData, [event.target.name]: event.target.value });
+  };
+
+  const handleUpdateUser = async () => {
+    try {
+      const config = { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${user.token}` } };
+      await axios.put(`${API_BASE_URL}/api/admin/users/${editingUser._id}`, formData, config);
+      alert('User updated successfully!');
+      handleEditClose();
+      fetchUsers();
+    } catch (error) {
+      console.error("Failed to update user", error);
+      alert('Failed to update user.');
+    }
+  };
   
-  // --- EXISTING HANDLER FUNCTIONS ---
-  const handleEditOpen = (userToEdit) => { /* ... */ };
-  const handleEditClose = () => { /* ... */ };
-  const handleFormChange = (event) => { /* ... */ };
-  const handleUpdateUser = async () => { /* ... */ };
-  const handleDeleteOpen = (userToDelete) => { /* ... */ };
-  const handleDeleteClose = () => { /* ... */ };
-  const handleDeleteUser = async () => { /* ... */ };
-  const handleAssignOpen = (student) => { /* ... */ };
-  const handleAssignClose = () => { /* ... */ };
-  const handleAssignAdviser = async () => { /* ... */ };
-  
+  const handleDeleteOpen = (userToDelete) => {
+    setDeletingUser(userToDelete);
+  };
+
+  const handleDeleteClose = () => {
+    setDeletingUser(null);
+  };
+
+  const handleDeleteUser = async () => {
+    try {
+      const config = { headers: { Authorization: `Bearer ${user.token}` } };
+      await axios.delete(`${API_BASE_URL}/api/admin/users/${deletingUser._id}`, config);
+      alert('User deleted successfully!');
+      handleDeleteClose();
+      fetchUsers();
+    } catch (error) {
+      console.error("Failed to delete user", error);
+      alert('Failed to delete user.');
+    }
+  };
+
+  const handleAssignOpen = (student) => {
+    setAssigningStudent(student);
+  };
+
+  const handleAssignClose = () => {
+    setAssigningStudent(null);
+    setSelectedAdviserId('');
+  };
+
+  const handleAssignAdviser = async () => {
+    if (!selectedAdviserId) {
+      alert('Please select an adviser.');
+      return;
+    }
+    try {
+      const config = { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${user.token}` } };
+      const payload = { studentId: assigningStudent._id, adviserId: selectedAdviserId };
+      await axios.put(`${API_BASE_URL}/api/auth/assign-adviser`, payload, config);
+      alert('Adviser assigned successfully!');
+      handleAssignClose();
+    } catch (error) {
+      console.error('Failed to assign adviser', error);
+      alert('Failed to assign adviser.');
+    }
+  };
+
   const allRoles = ['student', 'classAdviser', 'hod', 'principal', 'officeStaff', 'admin'];
-  const allDepartments = ["CSE", "ECE", "IT", "EEE", "Civil", "Mech", "All"];
+  const allDepartments = ["All", "CSE", "ECE", "IT", "EEE", "Civil", "Mech"];
   const advisers = users.filter(u => u.role === 'classAdviser');
 
-  // --- NEW LOGIC TO FILTER AND SORT USERS ---
+  // Logic to filter and sort users based on the controls
   const filteredAndSortedUsers = useMemo(() => {
     return users
       .filter(u => {
@@ -63,9 +136,9 @@ const UserManagement = () => {
       })
       .sort((a, b) => {
         // Sorting Logic: students go to the bottom
-        const roleA = a.role === 'student' ? 1 : 0;
-        const roleB = b.role === 'student' ? 1 : 0;
-        return roleA - roleB;
+        const roleAIsStudent = a.role === 'student' ? 1 : 0;
+        const roleBIsStudent = b.role === 'student' ? 1 : 0;
+        return roleAIsStudent - roleBIsStudent;
       });
   }, [users, searchTerm, departmentFilter]);
 
@@ -75,7 +148,6 @@ const UserManagement = () => {
         &larr; Back to Dashboard
       </Button>
 
-      {/* --- NEW FILTER AND SEARCH CONTROLS --- */}
       <Paper elevation={3} sx={{ p: 2, mb: 2, display: 'flex', gap: 2, alignItems: 'center' }}>
         <TextField
           label="Search by Name or ID"
@@ -111,7 +183,6 @@ const UserManagement = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {/* Use the new filtered and sorted list */}
               {filteredAndSortedUsers.map((u) => (
                 <TableRow key={u._id}>
                   <TableCell>{u.name}</TableCell>
@@ -175,7 +246,7 @@ const UserManagement = () => {
           <FormControl fullWidth sx={{ mt: 2 }}>
             <InputLabel id="dept-select-label">Department</InputLabel>
             <Select name="department" labelId="dept-select-label" value={formData.department} label="Department" onChange={handleFormChange}>
-              {allDepartments.map(d => <MenuItem key={d} value={d}>{d}</MenuItem>)}
+              {allDepartments.filter(d => d !== 'All').map(d => <MenuItem key={d} value={d}>{d}</MenuItem>)}
             </Select>
           </FormControl>
           <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
