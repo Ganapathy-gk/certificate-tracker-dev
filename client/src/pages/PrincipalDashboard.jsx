@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 import { Box, Paper, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, Modal, TextareaAutosize, Link } from '@mui/material';
@@ -13,7 +13,7 @@ const PrincipalDashboard = () => {
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [actionComment, setActionComment] = useState('');
 
-  const fetchRequests = async () => {
+  const fetchRequests = useCallback(async () => {
     if (!user) return;
     try {
       const config = { headers: { Authorization: `Bearer ${user.token}` } };
@@ -22,11 +22,11 @@ const PrincipalDashboard = () => {
     } catch (error) {
       console.error("Failed to fetch requests", error);
     }
-  };
+  }, [user]);
 
   useEffect(() => {
-    if(user) fetchRequests();
-  }, [user]);
+    fetchRequests();
+  }, [fetchRequests]);
 
   const handleProcessClick = (request) => {
     setSelectedRequest(request);
@@ -84,9 +84,7 @@ const PrincipalDashboard = () => {
                     <TableCell>{req.student?.name || 'N/A'}</TableCell>
                     <TableCell>{req.certificateType}</TableCell>
                     <TableCell>
-                      {req.documentUrl ? (
-                        <Link href={req.documentUrl} target="_blank" rel="noopener noreferrer">View</Link>
-                      ) : ('None')}
+                      {req.documentUrl ? (<Link href={req.documentUrl} target="_blank" rel="noopener noreferrer">View</Link>) : ('None')}
                     </TableCell>
                     <TableCell><span className={`status-badge status-${req.status.toLowerCase().replace(/\s+/g, '-')}`}>{req.status}</span></TableCell>
                     <TableCell align="right">
@@ -106,6 +104,7 @@ const PrincipalDashboard = () => {
             <Typography variant="h6">Process Request</Typography>
             <Typography sx={{ mt: 2 }}><b>Student:</b> {selectedRequest.student?.name}</Typography>
             <Typography><b>Certificate:</b> {selectedRequest.certificateType}</Typography>
+            <Typography><b>Applied on:</b> {new Date(selectedRequest.createdAt).toLocaleDateString()}</Typography>
             <Typography><b>Purpose:</b> {selectedRequest.purpose}</Typography>
             {selectedRequest.documentUrl && (
               <Typography>

@@ -84,9 +84,7 @@ const ClassAdviserDashboard = () => {
                     <TableCell>{req.student?.name || 'N/A'}</TableCell>
                     <TableCell>{req.certificateType}</TableCell>
                     <TableCell>
-                      {req.documentUrl ? (
-                        <Link href={req.documentUrl} target="_blank" rel="noopener noreferrer">View</Link>
-                      ) : ('None')}
+                      {req.documentUrl ? (<Link href={req.documentUrl} target="_blank" rel="noopener noreferrer">View</Link>) : ('None')}
                     </TableCell>
                     <TableCell><span className={`status-badge status-${req.status.toLowerCase().replace(/\s+/g, '-')}`}>{req.status}</span></TableCell>
                     <TableCell align="right">
@@ -106,6 +104,8 @@ const ClassAdviserDashboard = () => {
             <Typography variant="h6">Process Request</Typography>
             <Typography sx={{ mt: 2 }}><b>Student:</b> {selectedRequest.student?.name}</Typography>
             <Typography><b>Certificate:</b> {selectedRequest.certificateType}</Typography>
+            {/* --- ADDED LINE --- */}
+            <Typography><b>Applied on:</b> {new Date(selectedRequest.createdAt).toLocaleDateString()}</Typography>
             <Typography><b>Purpose:</b> {selectedRequest.purpose}</Typography>
             {selectedRequest.documentUrl && (
               <Typography>

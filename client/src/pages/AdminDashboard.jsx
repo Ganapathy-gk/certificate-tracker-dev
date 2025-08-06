@@ -5,7 +5,7 @@ import axios from 'axios';
 import Clock from '../components/Clock';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { PieChart, Pie, Cell, ResponsiveContainer, Sector } from 'recharts';
+import { PieChart, Pie, Cell, Legend, ResponsiveContainer, Sector } from 'recharts';
 import { Button } from '@mui/material';
 import './AdminDashboard.css';
 
@@ -30,8 +30,12 @@ const renderActiveShape = (props) => {
 
   return (
     <g>
-      <text x={cx} y={cy} dy={8} textAnchor="middle" fill={fill} fontSize="1.1rem" fontWeight="bold">
-        {payload.name}
+      {/* UPDATED: Show the COUNT in the middle of the donut */}
+      <text x={cx} y={cy - 10} textAnchor="middle" fill="#333" fontSize="2rem" fontWeight="bold">
+        {value}
+      </text>
+      <text x={cx} y={cy + 10} textAnchor="middle" fill="#999" fontSize="1rem">
+        Requests
       </text>
       <Sector
         cx={cx} cy={cy} innerRadius={innerRadius} outerRadius={outerRadius}
@@ -43,7 +47,8 @@ const renderActiveShape = (props) => {
       />
       <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke={fill} fill="none" />
       <circle cx={ex} cy={ey} r={2} fill={fill} stroke="none" />
-      <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} textAnchor={textAnchor} fill="#333">{`${value} Requests`}</text>
+      {/* Show the full name in the pop-out label */}
+      <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} textAnchor={textAnchor} fill="#333">{payload.name}</text>
       <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} dy={18} textAnchor={textAnchor} fill="#999">
         {`(Rate ${(percent * 100).toFixed(2)}%)`}
       </text>
@@ -190,7 +195,7 @@ const AdminDashboard = () => {
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
-              {/* The <Legend /> component has been removed */}
+              <Legend layout="vertical" verticalAlign="middle" align="right" wrapperStyle={{ right: -10, top: '20%' }} />
             </PieChart>
           </ResponsiveContainer>
         </div>

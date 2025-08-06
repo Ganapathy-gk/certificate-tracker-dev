@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useMemo } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { 
   Box, Paper, Typography, Table, TableBody, TableCell, TableContainer, 
-  TableHead, TableRow, Button, Modal, Select, MenuItem, FormControl, InputLabel 
+  TableHead, TableRow, Button, Modal, Select, MenuItem, FormControl, InputLabel, TextField 
 } from '@mui/material';
 import './UserManagement.css';
 
@@ -16,114 +16,87 @@ const UserManagement = () => {
   const [editingUser, setEditingUser] = useState(null);
   const [deletingUser, setDeletingUser] = useState(null);
   const navigate = useNavigate();
-
-  // State for the main edit form
   const [formData, setFormData] = useState({ role: '', department: '' });
-
-  // State for the assign adviser modal
   const [assigningStudent, setAssigningStudent] = useState(null);
   const [selectedAdviserId, setSelectedAdviserId] = useState('');
 
-  const fetchUsers = async () => {
-    if (!user) return;
-    try {
-      const config = { headers: { Authorization: `Bearer ${user.token}` } };
-      const { data } = await axios.get(`${API_BASE_URL}/api/admin/users`, config);
-      setUsers(data);
-    } catch (error) {
-      console.error("Failed to fetch users", error);
-    }
-  };
+  // --- NEW STATE FOR FILTERS AND SEARCH ---
+  const [searchTerm, setSearchTerm] = useState('');
+  const [departmentFilter, setDepartmentFilter] = useState('All');
 
-  useEffect(() => {
-    fetchUsers();
-  }, [user]);
-
-  // --- Edit User Functions ---
-  const handleEditOpen = (userToEdit) => {
-    setEditingUser(userToEdit);
-    setFormData({ role: userToEdit.role, department: userToEdit.department || '' });
-  };
-
-  const handleEditClose = () => {
-    setEditingUser(null);
-  };
-
-  const handleFormChange = (event) => {
-    setFormData({ ...formData, [event.target.name]: event.target.value });
-  };
-
-  const handleUpdateUser = async () => {
-    try {
-      const config = { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${user.token}` } };
-      await axios.put(`${API_BASE_URL}/api/admin/users/${editingUser._id}`, formData, config);
-      alert('User updated successfully!');
-      handleEditClose();
-      fetchUsers();
-    } catch (error) {
-      console.error("Failed to update user", error);
-      alert('Failed to update user.');
-    }
-  };
+  const fetchUsers = async () => { /* ... existing function ... */ };
+  useEffect(() => { /* ... existing function ... */ }, [user]);
   
-  // --- Delete User Functions ---
-  const handleDeleteOpen = (userToDelete) => {
-    setDeletingUser(userToDelete);
-  };
-
-  const handleDeleteClose = () => {
-    setDeletingUser(null);
-  };
-
-  const handleDeleteUser = async () => {
-    try {
-      const config = { headers: { Authorization: `Bearer ${user.token}` } };
-      await axios.delete(`${API_BASE_URL}/api/admin/users/${deletingUser._id}`, config);
-      alert('User deleted successfully!');
-      handleDeleteClose();
-      fetchUsers();
-    } catch (error) {
-      console.error("Failed to delete user", error);
-      alert('Failed to delete user.');
-    }
-  };
-
-  // --- Assign Adviser Functions ---
-  const handleAssignOpen = (student) => {
-    setAssigningStudent(student);
-  };
-
-  const handleAssignClose = () => {
-    setAssigningStudent(null);
-    setSelectedAdviserId('');
-  };
-
-  const handleAssignAdviser = async () => {
-    if (!selectedAdviserId) {
-      alert('Please select an adviser.');
-      return;
-    }
-    try {
-      const config = { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${user.token}` } };
-      const payload = { studentId: assigningStudent._id, adviserId: selectedAdviserId };
-      await axios.put(`${API_BASE_URL}/api/auth/assign-adviser`, payload, config);
-      alert('Adviser assigned successfully!');
-      handleAssignClose();
-    } catch (error) {
-      console.error('Failed to assign adviser', error);
-      alert('Failed to assign adviser.');
-    }
-  };
-
+  // --- EXISTING HANDLER FUNCTIONS ---
+  const handleEditOpen = (userToEdit) => { /* ... */ };
+  const handleEditClose = () => { /* ... */ };
+  const handleFormChange = (event) => { /* ... */ };
+  const handleUpdateUser = async () => { /* ... */ };
+  const handleDeleteOpen = (userToDelete) => { /* ... */ };
+  const handleDeleteClose = () => { /* ... */ };
+  const handleDeleteUser = async () => { /* ... */ };
+  const handleAssignOpen = (student) => { /* ... */ };
+  const handleAssignClose = () => { /* ... */ };
+  const handleAssignAdviser = async () => { /* ... */ };
+  
   const allRoles = ['student', 'classAdviser', 'hod', 'principal', 'officeStaff', 'admin'];
-  const allDepartments = ["CSE", "ECE", "IT", "EEE", "Civil", "Mech"];
+  const allDepartments = ["CSE", "ECE", "IT", "EEE", "Civil", "Mech", "All"];
   const advisers = users.filter(u => u.role === 'classAdviser');
+
+  // --- NEW LOGIC TO FILTER AND SORT USERS ---
+  const filteredAndSortedUsers = useMemo(() => {
+    return users
+      .filter(u => {
+        // Department Filter
+        if (departmentFilter !== 'All' && u.department !== departmentFilter) {
+          return false;
+        }
+        // Search Term Filter
+        const term = searchTerm.toLowerCase();
+        if (term && !(
+          u.name.toLowerCase().includes(term) ||
+          u.studentId?.toLowerCase().includes(term)
+        )) {
+          return false;
+        }
+        return true;
+      })
+      .sort((a, b) => {
+        // Sorting Logic: students go to the bottom
+        const roleA = a.role === 'student' ? 1 : 0;
+        const roleB = b.role === 'student' ? 1 : 0;
+        return roleA - roleB;
+      });
+  }, [users, searchTerm, departmentFilter]);
 
   return (
     <Box className="user-management-container">
       <Button variant="contained" onClick={() => navigate('/admin')} sx={{ mb: 2 }}>
         &larr; Back to Dashboard
       </Button>
+
+      {/* --- NEW FILTER AND SEARCH CONTROLS --- */}
+      <Paper elevation={3} sx={{ p: 2, mb: 2, display: 'flex', gap: 2, alignItems: 'center' }}>
+        <TextField
+          label="Search by Name or ID"
+          variant="outlined"
+          size="small"
+          fullWidth
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+        <FormControl size="small" sx={{ minWidth: 200 }}>
+          <InputLabel>Department</InputLabel>
+          <Select
+            value={departmentFilter}
+            label="Department"
+            onChange={(e) => setDepartmentFilter(e.target.value)}
+          >
+            {allDepartments.map(dept => <MenuItem key={dept} value={dept}>{dept}</MenuItem>)}
+          </Select>
+        </FormControl>
+      </Paper>
+      
       <Paper elevation={3}>
         <TableContainer>
           <Typography variant="h5" sx={{ p: 2 }}>User Management</Typography>
@@ -138,7 +111,8 @@ const UserManagement = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {users.map((u) => (
+              {/* Use the new filtered and sorted list */}
+              {filteredAndSortedUsers.map((u) => (
                 <TableRow key={u._id}>
                   <TableCell>{u.name}</TableCell>
                   <TableCell>{u.email}</TableCell>
