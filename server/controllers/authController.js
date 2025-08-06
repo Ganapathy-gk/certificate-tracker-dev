@@ -23,7 +23,7 @@ exports.registerUser = async (req, res) => {
     if (user) {
       try {
         await transporter.sendMail({
-          from: `"CertTrack" <${process.env.EMAIL_USER}>`,
+          from: `"CertTrack" <${process.env.SENDER_EMAIL}>`,
           to: user.email,
           subject: 'Welcome to CertTrack - Your Account is Ready!',
           html: `
@@ -94,7 +94,7 @@ exports.forgotPassword = async (req, res) => {
     const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
 
     await transporter.sendMail({
-      from: `"CertTrack" <${process.env.EMAIL_USER}>`,
+      from: `"CertTrack" <${process.env.SENDER_EMAIL}>`,
       to: user.email,
       subject: 'CertTrack: Password Reset Request',
       html: `
