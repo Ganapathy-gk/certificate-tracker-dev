@@ -16,16 +16,26 @@ const RegisterPage = () => {
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
+const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(`${API_BASE_URL}/api/auth/register`, {
+      const response = await axios.post(`${API_BASE_URL}/api/auth/register`, {
         name, email, studentId, department, password, role: 'student',
       });
+
+      // This will now only run if the backend sends a 2xx success status
+      console.log('Server Response:', response.data); // Good for debugging
       alert('Registration successful! Please log in.');
       navigate('/login');
+
     } catch (error) {
-      alert('Registration failed. Please try again.');
+      // THIS IS THE MOST IMPORTANT PART
+      // Log the actual error from the backend to the console
+      console.error('Registration failed:', error.response ? error.response.data : error.message);
+
+      // Show a more specific error message to the user
+      const errorMessage = error.response?.data?.message || 'Registration failed. Please try again.';
+      alert(errorMessage);
     }
   };
 
@@ -67,8 +77,8 @@ const RegisterPage = () => {
                 <MenuItem value="ECE">ECE</MenuItem>
                 <MenuItem value="IT">IT</MenuItem>
                 <MenuItem value="EEE">EEE</MenuItem>
-                <MenuItem value="Civil">Civil</MenuItem>
-                <MenuItem value="Mech">Mech</MenuItem>
+                <MenuItem value="Civil">CIVIL</MenuItem>
+                <MenuItem value="Mech">MECH</MenuItem>
               </Select>
             </FormControl>
             <TextField margin="normal" required fullWidth name="password" label="Password" type="password" id="password" value={password} onChange={(e) => setPassword(e.target.value)} />

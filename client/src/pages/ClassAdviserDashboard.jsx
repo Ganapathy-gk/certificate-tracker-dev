@@ -41,10 +41,21 @@ const ClassAdviserDashboard = () => {
     try {
       const config = { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${user.token}` } };
       const payload = { action, comment: actionComment };
+      
+      // 1. Make the API call as before
       await axios.put(`${API_BASE_URL}/api/certificates/${selectedRequest._id}/process`, payload, config);
-      alert('Request processed successfully!');
+
+      // 2. THE FIX: Immediately remove the processed request from the UI state
+      setRequests(currentRequests =>
+        currentRequests.filter(req => req._id !== selectedRequest._id)
+      );
+      
+      // 3. Close the modal
       setSelectedRequest(null);
-      fetchRequests();
+
+      // 4. Show the success message
+      alert('Request processed successfully!');
+
     } catch (error) {
       alert(error.response?.data?.message || 'Failed to process request.');
     }
